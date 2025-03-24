@@ -77,8 +77,5 @@ def collect_two_chains(u: mda.Universe, ignore_num_start_res, ignore_num_end_res
     new_universe = mda.Universe.empty(len(selected_atoms))
     new_universe.atoms = selected_atoms.atoms
 
-    # Add the selected atoms to the new Universe
-    #new_universe.add_TopologyAttr('atoms', selected_atoms.atoms)
-    #new_universe.add_TopologyAttr('residues', selected_atoms.residues)
 
     return new_universe
