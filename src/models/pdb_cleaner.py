@@ -1,7 +1,7 @@
 import MDAnalysis as mda
 
 
-def check_chains_in_pdb(file_path: str) -> bool:
+def check_chains_in_pdb(u: mda.Universe) -> bool:
     """
     Checks if both Chain A and Chain B are present in the PDB file.
 
@@ -16,7 +16,6 @@ def check_chains_in_pdb(file_path: str) -> bool:
         True if both Chain A and Chain B are present in the PDB file, False otherwise.
     """
     # Load the PDB file into a Universe object
-    u = mda.Universe(file_path)
 
     # Check if Chain A and Chain B are present
     chains = set(u.select_atoms("chain A").chains)  # Get the chains from atoms of chain A
@@ -26,7 +25,7 @@ def check_chains_in_pdb(file_path: str) -> bool:
     return 'A' in chains and 'B' in chains
 
 
-def collect_two_chains(file_path: str) -> mda.Universe:
+def collect_two_chains(u: mda.Universe) -> mda.Universe:
     """
     Loads a multi-model PDB file and retains all atoms from chain A and chain B in the first model.
 
@@ -41,7 +40,6 @@ def collect_two_chains(file_path: str) -> mda.Universe:
         MDAnalysis Universe object containing only atoms from chain A and chain B in the first model.
     """
     # Load the PDB file into a Universe object
-    u = mda.Universe(file_path)
 
     # Select the first model (first frame)
     u.trajectory[0]  # Select the first model/frame
