@@ -4,12 +4,12 @@ import os.path
 from MDAnalysis.analysis import distances
 import numpy as np
 
-from controller import Controller
+from src.controllers.controller import Controller
 from src.models import pdb_cleaner, pdb_reader, pdb_writer
 
 
 class ContactController(Controller):
-    def __init__(self, file_location, folder_location, output_folder, distance_cutoff=8.0):
+    def __init__(self, file_location, folder_location, output_folder, distance_cutoff):
         super().__init__()
 
         self.file_location = file_location
@@ -41,7 +41,6 @@ class ContactController(Controller):
 
         return True
 
-
     def run_controller(self):
         count = 0
         for universe in self.universe_list:
@@ -56,7 +55,7 @@ class ContactController(Controller):
                 distances_matrix = distances.distance_array(atom_a.position, chain_b_atoms.positions)
 
                 # Find atoms in chain B within the cutoff distance
-                close_atoms_b = chain_b_atoms[np.where(distances_matrix < self.distance_cutoff)[0]]
+                close_atoms_b = chain_b_atoms[np.where(distances_matrix <= self.distance_cutoff)[0]]
 
                 # Add residues from chain B that are within the cutoff
                 for atom_b in close_atoms_b:

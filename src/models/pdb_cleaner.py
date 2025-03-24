@@ -18,11 +18,11 @@ def check_chains_in_pdb(u: mda.Universe) -> bool:
     # Load the PDB file into a Universe object
 
     # Check if Chain A and Chain B are present
-    chains = set(u.select_atoms("chain A").chains)  # Get the chains from atoms of chain A
-    chains.update(u.select_atoms("chain B").chains)  # Add chains from chain B to the set
+    chain_A = set(u.select_atoms('chainid A'))  # Get the chains from atoms of chain A
+    chain_B = set(u.select_atoms('chainid B'))  # Add chains from chain B to the set
 
     # If both 'A' and 'B' are in the set, return True
-    return 'A' in chains and 'B' in chains
+    return chain_A and chain_B
 
 
 def collect_two_chains(u: mda.Universe) -> mda.Universe:
@@ -45,16 +45,17 @@ def collect_two_chains(u: mda.Universe) -> mda.Universe:
     u.trajectory[0]  # Select the first model/frame
 
     # Now select all atoms from chain A and chain B in the first model
-    chain_a_first_model = u.select_atoms("chain A")  # Select atoms from chain A in the first model
-    chain_b_first_model = u.select_atoms("chain B")  # Select atoms from chain B in the first model
+    chain_a_first_model = u.select_atoms("chainid A")  # Select atoms from chain A in the first model
+    chain_b_first_model = u.select_atoms("chainid B")  # Select atoms from chain B in the first model
 
     # Combine the selections (chain A + chain B)
     selected_atoms = chain_a_first_model + chain_b_first_model
 
     new_universe = mda.Universe.empty(len(selected_atoms))
+    new_universe.atoms = selected_atoms.atoms
 
     # Add the selected atoms to the new Universe
-    new_universe.add_TopologyAttr('atoms', selected_atoms.atoms)
-    new_universe.add_TopologyAttr('residues', selected_atoms.residues)
+    #new_universe.add_TopologyAttr('atoms', selected_atoms.atoms)
+    #new_universe.add_TopologyAttr('residues', selected_atoms.residues)
 
     return new_universe
