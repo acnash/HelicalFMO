@@ -1,4 +1,4 @@
-# Main entry into HElicalFMO
+#Main entry into HElicalFMO
 
 import argparse
 import os
