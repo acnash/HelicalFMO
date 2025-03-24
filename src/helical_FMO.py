@@ -16,11 +16,13 @@ def main() -> None:
     parser.add_argument("--mode", type=str, choices=["contact_distance"],
                         required=True, help="Select a mode: contact_distance.")
     parser.add_argument("--output_folder", type=str, required=True)
+    parser.add_argument("--distance_cutoff", type=float, required=False)
 
     args = parser.parse_args()
     file_location = args.file
     folder_location = args.folder
     output_folder = args.output_folder
+    distance_cutoff = args.distance_cutoff
     mode = args.mode
 
     if not file_location and not folder_location:
@@ -63,12 +65,12 @@ def main() -> None:
         print(f"Error: No output_folder specified. I don't know where to store results.")
         return
 
-    mode_decision(mode, file_location, folder_location)
+    mode_decision(mode, output_folder, file_location, folder_location, distance_cutoff)
 
 
-def mode_decision(mode: str, file_location: str = None, folder_location: str = None) -> None:
+def mode_decision(mode: str, output_folder: str, file_location: str = None, folder_location: str = None, distance_cutoff=None) -> None:
     if mode == "contact_distance":
-        contact_controller = ContactController(file_location, folder_location)
+        contact_controller = ContactController(file_location, folder_location, output_folder, distance_cutoff)
         validated = contact_controller.validate_inputs()
         if not validated:
             print(f"Error: Unable to read inputs.")
