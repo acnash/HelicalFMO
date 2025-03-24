@@ -19,11 +19,11 @@ class ContactController(Controller):
 
         self.universe_list = []
 
-    def validate_inputs(self):
+    def validate_inputs(self, ignore_num_start_res, ignore_num_end_res):
         if self.file_location:
             universe = pdb_reader.read_pdb_file(self.file_location)
             if pdb_cleaner.check_chains_in_pdb(universe):
-                universe = pdb_cleaner.collect_two_chains(universe)
+                universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
                 self.universe_list.append(universe)
                 print("Read and processed two chains from one model")
             else:
@@ -49,36 +49,23 @@ class ContactController(Controller):
             chain_a_atoms = universe.select_atoms('chainid A')
             chain_b_atoms = universe.select_atoms('chainid B')
 
-            # Loop through all atoms in chain A
-            for atom_a in chain_a_atoms:
-                # Calculate distances to all atoms in chain B
-                distances_matrix = distances.distance_array(atom_a.position, chain_b_atoms.positions)
+            # Compute pairwise distance matrix in one step
+            distance_matrix = distances.distance_array(chain_a_atoms.positions, chain_b_atoms.positions)
 
-                # Find atoms in chain B within the cutoff distance
-                close_atoms_b = chain_b_atoms[np.where(distances_matrix <= self.distance_cutoff)[0]]
+            # Find pairs of atoms that are within the cutoff distance
+            close_pairs = np.where(distance_matrix <= self.distance_cutoff)
 
-                # Add residues from chain B that are within the cutoff
-                for atom_b in close_atoms_b:
-                    close_residues.add(atom_b.residue)
-
-            # Loop through all atoms in chain B
-            for atom_b in chain_b_atoms:
-                # Calculate distances to all atoms in chain A
-                distances_matrix = distances.distance_array(atom_b.position, chain_a_atoms.positions)
-
-                # Find atoms in chain A within the cutoff distance
-                close_atoms_a = chain_a_atoms[np.where(distances_matrix <= self.distance_cutoff)[0]]
-
-                # Add residues from chain A that are within the cutoff
-                for atom_a in close_atoms_a:
-                    close_residues.add(atom_a.residue)
+            # Get the residues for the atoms in chain A
+            close_residues.update(chain_a_atoms[close_pairs[0]].residues)
+            # Get the residues for the atoms in chain B
+            close_residues.update(chain_b_atoms[close_pairs[1]].residues)
 
             # Select atoms from the close residues (both chains A and B)
             close_atoms = universe.select_atoms('resid {} and (chainid A or chainid B)'.format(
-                ' '.join([str(residue.resid) for residue in close_residues])
+                ' '.join(map(str, [res.resid for res in close_residues]))
             ))
 
-            file_name = "_".join("contacts", str(count), ".pdb")
+            file_name = "_".join(["contacts", str(count), ".pdb"])
             output_location = os.path.join(self.output_folder, file_name)
             pdb_writer.write_fragments_pdb(output_location, close_atoms)
             count = count + 1
