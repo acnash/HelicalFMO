@@ -22,7 +22,9 @@ class FMOController(Controller):
         self.__work_on_chain(chain_B)
 
     def __work_on_chain(self, chain: mda.AtomGroup):
-        pass
+        residues = [(res.resname, res.resid) for res in chain.residues]
+
+        print("bob")
 
     def __add_gamess_instructions(self):
         pass
