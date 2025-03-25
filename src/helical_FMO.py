@@ -29,6 +29,14 @@ def main() -> None:
     ignore_num_end_res = args.ignore_num_end_res
     mode = args.mode
 
+    if ignore_num_start_res < 0:
+        print(f"Error: --ignore_num_start_res must be >= 0")
+        return
+
+    if ignore_num_end_res < 0:
+        print(f"Error: --ignore_num_end_res must be >= 0")
+        return
+
     if not file_location and not folder_location:
         print(f"Error: Neither file or folder locations were provided.")
         return
