@@ -16,8 +16,6 @@ class FMOController(Controller):
         self.universe_list = []
         self.output_location = ""
 
-
-
     def validate_inputs(self, pdb_file, pdb_folder, output_location):
         if pdb_file:
             self.pdb_files.append(pdb_file)
@@ -30,11 +28,13 @@ class FMOController(Controller):
         self.output_location = output_location
 
     def run_controller(self):
-        chain_A = self.universe.select_atoms("chain A")
-        chain_B = self.universe.select_atoms("chain B")
+        # operate at scale over all universe objects
+        for universe in self.universe_list:
+            chain_A = universe.select_atoms("chain A")
+            chain_B = universe.select_atoms("chain B")
 
-        self.__work_on_chain(chain_A)
-        self.__work_on_chain(chain_B)
+            self.__work_on_chain(chain_A)
+            self.__work_on_chain(chain_B)
 
     def __work_on_chain(self, chain: mda.AtomGroup):
         residues = [(res.resname, res.resid) for res in chain.residues]

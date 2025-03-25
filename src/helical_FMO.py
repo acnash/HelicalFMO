@@ -120,7 +120,8 @@ def mode_decision(mode: str,
         contact_controller.run_controller()
     elif mode == "fmo":
         fmo_controller = FMOController()
-        validates = fmo_controller.validate_inputs(file_location, folder_location, output_folder)
+        fmo_controller.validate_inputs(file_location, folder_location, output_folder)
+        fmo_controller.run_controller()
 
 
 if __name__ == '__main__':
