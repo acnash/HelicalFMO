@@ -38,11 +38,25 @@ class FMOController(Controller):
             chain_A_uni = self.__reorder_atoms_in_chain(chain_A_residues)
             chain_B_uni = self.__reorder_atoms_in_chain(chain_B_residues)
 
+            chain_A_indat = self.__build_indat(chain_A_residues)
+            chain_B_indat = self.__build_indat(chain_B_residues)
+
             chain_A_frag_boundary_ids = self.__find_fragment_boundaries(chain_A_uni)
             chain_B_frag_boundary_ids = self.__find_fragment_boundaries(chain_B_uni)
 
             chain_A_fmoxyz_list = self.__build_FMOXYZ(chain_A_uni)
             chain_B_fmoxyz_list = self.__build_FMOXYZ(chain_B_uni)
+
+    def __build_indat(self, chain_A: mda.AtomGroup) -> List[str]:
+        indat_list = []
+        count = 1
+        for residue in chain_A.residues:
+            for atom in residue.atoms:
+                indat_list.append(str(count))
+                indat_list.append(",")
+            indat_list.append("\n")
+
+        return indat_list
 
     def __build_FMOXYZ(self, u: mda.Universe) -> List[str]:
         element_atomic_number = {
