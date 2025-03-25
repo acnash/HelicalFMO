@@ -30,16 +30,44 @@ class FMOController(Controller):
     def run_controller(self):
         # operate at scale over all universe objects
         for universe in self.universe_list:
-            chain_A = universe.select_atoms("chain A")
-            chain_B = universe.select_atoms("chain B")
+            chain_A_residues = universe.select_atoms("chainid A").residues
+            chain_B_residues = universe.select_atoms("chainid B").residues
 
-            self.__work_on_chain(chain_A)
-            self.__work_on_chain(chain_B)
+            self.__work_on_chain(chain_A_residues)
+            self.__work_on_chain(chain_B_residues)
 
-    def __work_on_chain(self, chain: mda.AtomGroup):
-        residues = [(res.resname, res.resid) for res in chain.residues]
+    def __work_on_chain(self, residues: mda.AtomGroup):
 
-        print("bob")
+        # List to store reordered AtomGroups
+        reordered_atom_groups = []
+
+        # Iterate through each residue in Chain A
+        for res in residues:
+            atoms = res.atoms  # Get all atoms in the residue
+
+            # Select CA and C atoms
+            ca_atom = atoms.select_atoms("name CA")
+            c_atom = atoms.select_atoms("name C")
+
+            # Select all other atoms except CA and C
+            other_atoms = atoms.select_atoms("not name CA C")
+
+            # Merge atoms in new order (other atoms first, then CA and C)
+            reordered_atom_group = other_atoms + ca_atom + c_atom
+
+            # Store the reordered AtomGroup
+            reordered_atom_groups.append(reordered_atom_group)
+
+        # Merge all reordered AtomGroups into a new universe
+        new_u = mda.Merge(*reordered_atom_groups)  # Unpacking AtomGroups
+
+        # Save the reordered PDB file
+        new_u.atoms.write("reordered_chainA.pdb")
+
+        print("I'm here....")
+
+
+
 
     def __add_gamess_instructions(self):
         pass
