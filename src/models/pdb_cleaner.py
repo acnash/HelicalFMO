@@ -1,20 +1,9 @@
+from typing import List
+
 import MDAnalysis as mda
 
 
 def check_chains_in_pdb(u: mda.Universe) -> bool:
-    """
-    Checks if both Chain A and Chain B are present in the PDB file.
-
-    Parameters:
-    -----------
-    file_path : str
-        Path to the PDB file.
-
-    Returns:
-    --------
-    bool
-        True if both Chain A and Chain B are present in the PDB file, False otherwise.
-    """
     # Load the PDB file into a Universe object
 
     # Check if Chain A and Chain B are present
@@ -26,21 +15,6 @@ def check_chains_in_pdb(u: mda.Universe) -> bool:
 
 
 def collect_two_chains(u: mda.Universe, ignore_num_start_res, ignore_num_end_res) -> mda.Universe:
-    """
-    Loads a multi-model PDB file and retains all atoms from chain A and chain B in the first model.
-
-    Parameters:
-    -----------
-    file_path : str
-        Path to the multi-model PDB file.
-
-    Returns:
-    --------
-    mda.Universe
-        MDAnalysis Universe object containing only atoms from chain A and chain B in the first model.
-    """
-
-
     u.trajectory[0]  # Select the first model/frame
 
     chain_a_first_model = u.select_atoms("chainid A")
@@ -76,5 +50,24 @@ def collect_two_chains(u: mda.Universe, ignore_num_start_res, ignore_num_end_res
     new_universe = mda.Universe.empty(len(selected_atoms))
     new_universe.atoms = selected_atoms.atoms
 
-
     return new_universe
+
+
+def renumber_chain_resids(u: mda.Universe, chain_list: List[str]) -> mda.Universe:
+    # Create a copy of the universe to modify
+    new_u = mda.Universe.empty(n_atoms=len(u.atoms), trajectory=True)
+    new_u.atoms = u.atoms  # Copy atom data (topology)
+    new_u.load_new(u.filename)  # Load coordinates (pdb or other structure)
+
+    # Loop through each specified chain
+    for chain_data in chain_list:
+        chain, resid = chain_data.split(":")
+        resid = int(resid)
+        # Select all residues from the given chain
+        chain_residues = new_u.select_atoms(f"chainid {chain}").residues
+
+        # Renumber residues starting from 1
+        for new_resid, residue in enumerate(chain_residues, start=resid):
+            residue.resid = new_resid
+
+    return new_u

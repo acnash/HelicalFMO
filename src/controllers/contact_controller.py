@@ -22,11 +22,13 @@ class ContactController(Controller):
 
         self.universe_list = []
 
-    def validate_inputs(self, ignore_num_start_res, ignore_num_end_res):
+    def validate_inputs(self, ignore_num_start_res, ignore_num_end_res, renum_chains_list):
         if self.file_location:
             universe = pdb_reader.read_pdb_file(self.file_location)
             if pdb_cleaner.check_chains_in_pdb(universe):
                 universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
+                if renum_chains_list:
+                    universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
                 self.universe_list.append(universe)
                 print("Read and processed two chains from one model")
                 self.logger.info("Read and processed two chains from one model")
@@ -37,7 +39,9 @@ class ContactController(Controller):
             universe_list = pdb_reader.read_pdb_folder(self.file_location)
             for universe in universe_list:
                 if pdb_cleaner.check_chains_in_pdb(universe):
-                    universe = pdb_cleaner.collect_two_chains(universe)
+                    universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
+                    if renum_chains_list:
+                        universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
                     self.universe_list.append(universe)
                     print("Read and processed two chains from one model")
                     self.logger.info("Read and processed two chains from one model")

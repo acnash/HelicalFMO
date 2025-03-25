@@ -1,6 +1,7 @@
 # Main entry into HelicalFMO
 import argparse
 import os
+from typing import List
 
 from logger_config import get_logger
 from controllers.contact_controller import ContactController
@@ -19,6 +20,8 @@ def main() -> None:
     parser.add_argument("--distance_cutoff", type=float, required=False, default=8)
     parser.add_argument("--ignore_num_start_res", type=int, required=False, default=0)
     parser.add_argument("--ignore_num_end_res", type=int, required=False, default=0)
+    parser.add_argument("--renum_chains", nargs="+",
+                        help="List of chain:resid pairs (e.g., A:4 B:99 C:27). Renumbering starts from the resid.")
 
     args = parser.parse_args()
     file_location = args.file
@@ -28,6 +31,7 @@ def main() -> None:
     ignore_num_start_res = args.ignore_num_start_res
     ignore_num_end_res = args.ignore_num_end_res
     mode = args.mode
+    renum_chains_list = args.renum_chains
 
     if ignore_num_start_res < 0:
         print(f"Error: --ignore_num_start_res must be >= 0")
@@ -90,14 +94,22 @@ def main() -> None:
         logger.error(f"Error: No output_folder specified. I don't know where to store results.")
         return
 
-    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff, file_location, folder_location)
+    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff, renum_chains_list,
+                  file_location, folder_location)
 
 
-def mode_decision(mode: str, ignore_num_start_res: int, ignore_num_end_res: int, output_folder: str, distance_cutoff: float, file_location: str = None, folder_location: str = None) -> None:
+def mode_decision(mode: str,
+                  ignore_num_start_res: int,
+                  ignore_num_end_res: int,
+                  output_folder: str,
+                  distance_cutoff: float,
+                  renum_chains_list: List[str] = None,
+                  file_location: str = None,
+                  folder_location: str = None) -> None:
     logger = get_logger(__name__)
     if mode == "contact_distance":
         contact_controller = ContactController(file_location, folder_location, output_folder, distance_cutoff)
-        validated = contact_controller.validate_inputs(ignore_num_start_res, ignore_num_end_res)
+        validated = contact_controller.validate_inputs(ignore_num_start_res, ignore_num_end_res, renum_chains_list)
         if not validated:
             print(f"Error: Unable to read inputs.")
             logger.error(f"Error: Unable to read inputs.")
