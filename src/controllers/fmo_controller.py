@@ -13,12 +13,18 @@ class FMOController(Controller):
         super().__init__()
 
         self.logger = get_logger(__name__)
-        self.basis = basis
-        self.theory = theory
+        self.output_location = ""
         self.pdb_files = []
         self.universe_list = []
-        self.output_location = ""
+
+        self.basis = basis
+        self.theory = theory
+        self.fragment_name_list = []
         self.system_charge_list = []
+        self.indat_list = []
+        self.icharge_list = []
+        self.num_fragments_list = []
+        self.mult_list = []
 
 
     def validate_inputs(self, pdb_file, pdb_folder, output_location):
@@ -42,8 +48,20 @@ class FMOController(Controller):
             chain_A_uni = self.__reorder_atoms_in_chain(chain_A_residues)
             chain_B_uni = self.__reorder_atoms_in_chain(chain_B_residues)
 
-            chain_A_indat = self.__build_indat(chain_A_residues)
-            chain_B_indat = self.__build_indat(chain_B_residues)
+            indat = self.__build_indat(universe)
+            self.indat_list.append(indat)
+
+            fragnames = self.__build_fragnames(universe)
+            self.fragment_name_list.append(fragnames)
+
+            icharge = self.__build_icharge(universe)
+            self.icharge_list.append(icharge)
+
+            nfrag = self.__build_nfrag(universe)
+            self.num_fragments_list.append(nfrag)
+
+            mult = self.__build_multiplicity(universe)
+            self.mult_list.append(mult)
 
             chain_A_frag_boundary_ids = self.__find_fragment_boundaries(chain_A_uni)
             chain_B_frag_boundary_ids = self.__find_fragment_boundaries(chain_B_uni)
@@ -51,17 +69,72 @@ class FMOController(Controller):
             chain_A_fmoxyz_list = self.__build_FMOXYZ(chain_A_uni)
             chain_B_fmoxyz_list = self.__build_FMOXYZ(chain_B_uni)
 
-    def __build_indat(self, chain: mda.AtomGroup) -> List[str]:
-        indat_list = []
+    def __build_multiplicity(self, u: mda.Universe) -> str:
+        mult = "mult(1)="
+        for residue in u.residues:
+            mult = "".join([mult, "1", ","])
+
+        return mult
+
+
+    def __build_nfrag(self, u: mda.Universe) -> str:
+        count = 0
+        for residue in u.residues:
+            count = count + 1
+        return f"nfrag={str(count)}\n"
+
+
+    def __build_icharge(self, u: mda.Universe) -> str:
+        residue_charge = {
+            "GLY": 0,
+            "VAL": 0,
+            "ALA": 0,
+            "LEU": 0,
+            "ILE": 0,
+            "TRP": 0,
+            "TYR": 0,
+            "PHE": 0,
+            "MET": 0,
+            "SER": 0,
+            "HIS": 0,
+            "HID": 0,
+            "HIE": 0,
+            "HIP": 1,
+            "GLN": 0,
+            "GLU": -1,
+            "ARG": 1,
+            "LYS": 1,
+            "PRO": 0,
+            "THR": 0,
+            "CYS": 0,
+            "ASP": -1
+        }
+        icharge = "icharg(1)="
+        for residue in u.residues:
+            charge = residue_charge[residue.resname]
+            icharge = "".join([icharge, str(charge), ","])
+
+        return icharge
+
+    def __build_fragnames(self, u: mda.Universe) -> str:
+        fragnames = "frgnam(1)="
+        for residue in u.residues:
+            fragnames = ",".join([fragnames, residue.name])
+        fragnames = "".join([fragnames, "\n"])
+
+        return fragnames
+
+    def __build_indat(self, u: mda.Universe) -> str:
+        indat_str = "indat(1)="
         count = 1
-        for residue in chain.residues:
+        for residue in u.residues:
             for atom in residue.atoms:
-                indat_list.append(str(count))
-                indat_list.append(",")
-            indat_list.append("\n")
+                indat_str."".join([indat_str, str(count)])
+                indat_str."".join([indat_str, ","])
+            indat_str."".join([indat_str, "\n"])
             count = count + 1
 
-        return indat_list
+        return indat_str
 
     def __build_FMOXYZ(self, u: mda.Universe) -> List[str]:
         element_atomic_number = {
