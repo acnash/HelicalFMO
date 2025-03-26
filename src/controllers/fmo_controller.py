@@ -26,6 +26,7 @@ class FMOController(Controller):
         self.num_fragments_list = []
         self.mult_list = []
         self.frag_boundary_list = []
+        self.fmoxyz_list = []
 
 
     def validate_inputs(self, pdb_file, pdb_folder, output_location):
@@ -68,8 +69,15 @@ class FMOController(Controller):
             chain_B_frag_boundary_ids = self.__find_fragment_boundaries(chain_B_uni)
             self.frag_boundary_list.append("".join([chain_A_frag_boundary_ids, chain_B_frag_boundary_ids]))
 
-            chain_A_fmoxyz_list = self.__build_FMOXYZ(chain_A_uni)
-            chain_B_fmoxyz_list = self.__build_FMOXYZ(chain_B_uni)
+            chain_A_fmoxyz_str = self.__build_FMOXYZ(chain_A_uni)
+            chain_B_fmoxyz_str = self.__build_FMOXYZ(chain_B_uni)
+            self.fmoxyz_list.append("".join([chain_A_fmoxyz_str, chain_B_fmoxyz_str]))
+
+            self.__write_fmo_files()
+
+
+    def __write_fmo_files(self):
+        pass
 
     def __build_multiplicity(self, u: mda.Universe) -> str:
         mult = "mult(1)="
@@ -138,7 +146,7 @@ class FMOController(Controller):
 
         return indat_str
 
-    def __build_FMOXYZ(self, u: mda.Universe) -> List[str]:
+    def __build_FMOXYZ(self, u: mda.Universe) -> str:
         element_atomic_number = {
             "H": 1,  # Hydrogen
             "He": 2,  # Helium
@@ -165,10 +173,10 @@ class FMOController(Controller):
         for atom in u.atoms:
             element = atom.name[:2] if atom.name[:2] in element_atomic_number else atom.name[0]  # Extract element symbol from atom name
             atomic_number = element_atomic_number[element]  # Placeholder (MDAnalysis doesn't store atomic numbers)
-            xyz_entry = f"{element} {atomic_number} {atom.position[0]:.3f} {atom.position[1]:.3f} {atom.position[2]:.3f}"
+            xyz_entry = f"{element} {atomic_number} {atom.position[0]:.3f} {atom.position[1]:.3f} {atom.position[2]:.3f} \n"
             xyz_list.append(xyz_entry)
 
-        return xyz_list
+        return "".join(xyz_list)
 
     def __find_fragment_boundaries(self, u: mda.Universe) -> str: #List[tuple[Any, Any]]:
         residues = u.residues
