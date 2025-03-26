@@ -25,6 +25,7 @@ class FMOController(Controller):
         self.icharge_list = []
         self.num_fragments_list = []
         self.mult_list = []
+        self.frag_boundary_list = []
 
 
     def validate_inputs(self, pdb_file, pdb_folder, output_location):
@@ -65,6 +66,7 @@ class FMOController(Controller):
 
             chain_A_frag_boundary_ids = self.__find_fragment_boundaries(chain_A_uni)
             chain_B_frag_boundary_ids = self.__find_fragment_boundaries(chain_B_uni)
+            self.frag_boundary_list.append("".join([chain_A_frag_boundary_ids, chain_B_frag_boundary_ids]))
 
             chain_A_fmoxyz_list = self.__build_FMOXYZ(chain_A_uni)
             chain_B_fmoxyz_list = self.__build_FMOXYZ(chain_B_uni)
@@ -168,11 +170,12 @@ class FMOController(Controller):
 
         return xyz_list
 
-    def __find_fragment_boundaries(self, u: mda.Universe) -> List[tuple[Any, Any]]:
+    def __find_fragment_boundaries(self, u: mda.Universe) -> str: #List[tuple[Any, Any]]:
         residues = u.residues
 
         # List to store recorded atom indices
-        c_ca_indices = []
+        #c_ca_indices = []
+        boundary_str = ""
 
         # Loop through residues except the last one
         for i in range(len(residues) - 1):
@@ -187,11 +190,12 @@ class FMOController(Controller):
 
                 # Record atom indices if found
                 if len(c_atom) > 0 and len(ca_atom) > 0:
-                    c_ca_indices.append((c_atom[0].index, ca_atom[0].index))
+                    boundary_str = "".join([boundary_str, "-", str(ca_atom[0].index), " ", str(c_atom[0].index), " ", self.basis, "\n"])
+                    #c_ca_indices.append(( "".join(["-",str(ca_atom[0].index)]), str(c_atom[0].index)))
 
         # Print results
         #print("Recorded C and CA atom indices:", c_ca_indices)
-        return c_ca_indices
+        return boundary_str
 
 
     def __reorder_atoms_in_chain(self, residues: mda.AtomGroup) -> mda.Universe:
