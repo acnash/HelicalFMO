@@ -24,6 +24,10 @@ def main() -> None:
     parser.add_argument("--ignore_num_end_res", type=int, required=False, default=0)
     parser.add_argument("--renum_chains", nargs="+",
                         help="List of chain:resid pairs (e.g., A:4 B:99 C:27). Renumbering starts from the resid.")
+    parser.add_argument("--basis", type=str, choices=["STO-3G", "6-31G*"], default="STO-3G", required=False,
+                        help="FMO basis set: STO-3G (default), 6-31G*")
+    parser.add_argument("--theory", type=str, choices=["HF", "MP2"], default="HF", required=False,
+                        help="FMO level of theory: HF (default), MP2")
 
     args = parser.parse_args()
     file_location = args.file
@@ -34,6 +38,8 @@ def main() -> None:
     ignore_num_end_res = args.ignore_num_end_res
     mode = args.mode
     renum_chains_list = args.renum_chains
+    basis = args.basis
+    theory = args.theory
 
     if ignore_num_start_res < 0:
         print(f"Error: --ignore_num_start_res must be >= 0")
@@ -96,7 +102,9 @@ def main() -> None:
         logger.error(f"Error: No output_folder specified. I don't know where to store results.")
         return
 
-    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff, renum_chains_list,
+    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff,
+                  basis, theory,
+                  renum_chains_list,
                   file_location, folder_location)
 
 
@@ -105,6 +113,8 @@ def mode_decision(mode: str,
                   ignore_num_end_res: int,
                   output_folder: str,
                   distance_cutoff: float,
+                  basis: str,
+                  theory: str,
                   renum_chains_list: List[str] = None,
                   file_location: str = None,
                   folder_location: str = None) -> None:
@@ -119,7 +129,7 @@ def mode_decision(mode: str,
 
         contact_controller.run_controller()
     elif mode == "fmo":
-        fmo_controller = FMOController()
+        fmo_controller = FMOController(basis, theory)
         fmo_controller.validate_inputs(file_location, folder_location, output_folder)
         fmo_controller.run_controller()
 

@@ -9,13 +9,17 @@ from src.logger_config import get_logger
 
 class FMOController(Controller):
 
-    def __init__(self):
+    def __init__(self, basis: str, theory: str):
         super().__init__()
 
         self.logger = get_logger(__name__)
+        self.basis = basis
+        self.theory = theory
         self.pdb_files = []
         self.universe_list = []
         self.output_location = ""
+        self.system_charge_list = []
+
 
     def validate_inputs(self, pdb_file, pdb_folder, output_location):
         if pdb_file:
@@ -47,14 +51,15 @@ class FMOController(Controller):
             chain_A_fmoxyz_list = self.__build_FMOXYZ(chain_A_uni)
             chain_B_fmoxyz_list = self.__build_FMOXYZ(chain_B_uni)
 
-    def __build_indat(self, chain_A: mda.AtomGroup) -> List[str]:
+    def __build_indat(self, chain: mda.AtomGroup) -> List[str]:
         indat_list = []
         count = 1
-        for residue in chain_A.residues:
+        for residue in chain.residues:
             for atom in residue.atoms:
                 indat_list.append(str(count))
                 indat_list.append(",")
             indat_list.append("\n")
+            count = count + 1
 
         return indat_list
 
@@ -144,7 +149,22 @@ class FMOController(Controller):
         return new_u
 
     def __add_gamess_instructions(self):
-        pass
+        instructions = []
+        for system_charge in self.system_charge_list:
+
+            if self.basis == "6-31G*":
+                basis_str = "$BASIS GBASIS=N31 NGAUSS=6 NDFUNC=1 $END\n"
+            else:
+                basis_str = "$BASIS GBASIS=STO NGAUSS=3 $END\n"
+
+            if self.theory == "HF":
+                control_str = f"$CONTROL SCFTYP=RHF RUNTYP=ENERGY ICHARG={str(system_charge)} $END\n"
+            else:
+                control_str = f"$CONTROL SCFTYP=RHF RUNTYP=ENERGY MPLEVL=2 ICHARG={str(system_charge)} $END\n"
+
+            memory_str = "$SYSTEM MEMORY=1000000 $END\n"
+            instructions.append("".join([basis_str, control_str, memory_str]))
+
 
     def __write_hybrid_orbitals(self, basis_set: str) -> List[str]:
         basis_631G_star = []
