@@ -23,3 +23,6 @@ class GromacsController(Controller):
 
     def run_tpr(self):
         pass
+
+    def run_controller(self):
+        pass
