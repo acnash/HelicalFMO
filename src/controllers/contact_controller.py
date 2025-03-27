@@ -36,7 +36,7 @@ class ContactController(Controller):
                 return False
 
         else:
-            universe_list = pdb_reader.read_pdb_folder(self.file_location)
+            universe_list = pdb_reader.read_pdb_folder(self.folder_location)
             for universe in universe_list:
                 if pdb_cleaner.check_chains_in_pdb(universe):
                     universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)

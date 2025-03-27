@@ -13,8 +13,8 @@ This code performs several operations:
 1. Rotates helical transmembrane dimers and writes to PDB files.
 2. Writes nearest residue-residue atomic records to PDF files. 
 3. Caps isolated peptide fragments with hydrogen atoms to ensure the overall formal charge is consistent with the original structure. 
-3. Generates GAMESS input file for FMO analysis based on nearest residue-residue PDB files.
-4. Performs 1 to 4 at scale.
+4. Generates GAMESS input file for FMO analysis based on nearest residue-residue PDB files.
+5. Performs 1 to 4 at scale.
 
 ## Isolating protein-protein interaction residues
 
@@ -24,8 +24,8 @@ This code performs several operations:
 - ```--output_folder``` For each input file (whether that's a single file or a directory of files), a corresponding results PDB and data file will be saved to this location. The PDB file contains only those residues within contact distance, and the data file contains two lists of isolated residues. 
 - ```--distance_cutoff``` (default 3 angstrom) An atom-to-atom distance measure between residues. Residue pairs within (<=) 
 the cutoff distance are kept as interaction residues.
-- ```--renum_chains``` Renumbers the residues on chain X from residue N e.g., A:1 renumbers residues, begging from "1", on chain A. For both chains, e.g., A:1 B:5, renumbers chain A beginning with "1", and chain B, beginning with "5". This operations
-ensures hydrogen atom caps are added to the correct FMO fragment. Problems will occur if a chain has disordered or missing residue numbers e.g., 3, 4, 6, 11, 12, or 1, 3, 4, 7, 5.
+- ```--renum_chains``` Renumbers the residues on chain X from residue N e.g., A:1 renumbers residues, begging from "1", on chain A. For both chains, e.g., A:1 B:5, renumbers chain A beginning with "1", and chain B, beginning with "5". This operation
+ensure hydrogen atom caps are added to the correct FMO fragment. Problems will occur if a chain has disordered or missing residue numbers e.g., 3, 4, 6, 11, 12, or 1, 3, 4, 7, 5.
 The code uses the sequential order of residue numbers to determine whether there is a break in the peptide backbone, and therefore, a hydrogen atom cap is required. 
 - ```--ignore_num_start_res``` Ignores all residues up to this residue e.g., ```5``` ensures the first four residues are ignored. Uses residue number. Renumber with ```--renum_chains``` if necessary.  
 - ```--ignore_num_end_res``` Ignores all residues after this residue e.g., ```26``` ensures all residues after the 26th are ignored. Uses residue number. Renumber with ```--renum_chains``` if necessary.  

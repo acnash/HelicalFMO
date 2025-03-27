@@ -5,12 +5,13 @@ from typing import List
 
 from logger_config import get_logger
 from controllers.contact_controller import ContactController
+from src.controllers.cap_controller import CapController
 from src.controllers.fmo_controller import FMOController
 
 
 def main() -> None:
     logger = get_logger(__name__)
-    mode_list = ["contact_distance", "fmo"]
+    mode_list = ["contact_distance", "fmo", "cap"]
 
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
 
@@ -18,7 +19,7 @@ def main() -> None:
                         help="Path to target file for contact distance and FMO input file generator.")
     parser.add_argument("--folder", type=str, required=False,
                         help="Path to target folder for contact distance and FMO input file generator.")
-    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo"],
+    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo", "cap"],
                         required=True, help="Select a mode: contact_distance.")
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--distance_cutoff", type=float, required=False, default=8)
@@ -130,6 +131,9 @@ def mode_decision(mode: str,
             return
 
         contact_controller.run_controller()
+    elif mode == "cap":
+        cap_controller = CapController(file_location, folder_location)
+        cap_controller.validate_inputs()
     elif mode == "fmo":
         fmo_controller = FMOController(basis, theory)
         fmo_controller.validate_inputs(file_location, folder_location, output_folder)
