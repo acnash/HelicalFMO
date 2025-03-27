@@ -43,10 +43,18 @@ peptide-bond neighbouring residue. We do this by adding a hydrogen atom to the c
 on the backbone, then a very short geometry optimisation is performed using PSI4 while keeping the original atoms
 restrained. Adding hydrogen caps ensures that the residue retains its typical formal charge. 
 
+### Command line parameters
+- ```--mode``` Set to ```cap ``` to add hydrogen cap atoms to cut residues.
+
+For example...
+```
+Example of execution
+```
+
 ## Generating GAMESS FMO input files
 
 ### Command line parameters
-- ```...``` -
+- ```--mode``` Set to ```fmo ``` to build GAMESS FMO input files.
 - ```...``` -
 - ```...``` - 
 
