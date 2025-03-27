@@ -83,7 +83,6 @@ class FMOController(Controller):
             fmo_object.atomic_numbers = "".join(set(chain_A_element_list + chain_B_element_list))
             fmo_object.fmoxyz = "".join([chain_A_fmoxyz_str, chain_B_fmoxyz_str])
 
-
             self.fmo_objects.append(fmo_object)
 
         self.__write_fmo_files()
@@ -94,10 +93,8 @@ class FMOController(Controller):
             output_file = fmo_object.output_file
             output_str = fmo_object.write_instructions()
 
-
-
-
-
+            with open(output_file, "w") as file:
+                file.write(output_str)
 
     def __build_multiplicity(self, u: mda.Universe) -> str:
         mult = "mult(1)="
