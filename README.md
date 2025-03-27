@@ -1,4 +1,7 @@
 # HelicalFMO
+
+## UNDER ACTIVE DEVELOPMENT (27.03.2025)
+
 Fragment Molecular Orbital analysis for interhelical transmembrane protein interactions. 
 
 This code performs several operations:
