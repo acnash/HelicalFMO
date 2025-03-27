@@ -14,8 +14,10 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
 
-    parser.add_argument("--file", type=str, required=False, help="Path to target file for contact distance and FMO input file generator.")
-    parser.add_argument("--folder", type=str, required=False, help="Path to target folder for contact distance and FMO input file generator.")
+    parser.add_argument("--file", type=str, required=False,
+                        help="Path to target file for contact distance and FMO input file generator.")
+    parser.add_argument("--folder", type=str, required=False,
+                        help="Path to target folder for contact distance and FMO input file generator.")
     parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo"],
                         required=True, help="Select a mode: contact_distance.")
     parser.add_argument("--output_folder", type=str, required=True)
