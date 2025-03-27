@@ -1,24 +1,35 @@
 # Main entry into HelicalFMO
-
 import argparse
 import os
+from typing import List
 
+from logger_config import get_logger
 from controllers.contact_controller import ContactController
+from src.controllers.fmo_controller import FMOController
+
 
 def main() -> None:
-
-    mode_list = ["contact_distance"]
+    logger = get_logger(__name__)
+    mode_list = ["contact_distance", "fmo"]
 
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
 
-    parser.add_argument("--file", type=str, help="Path to the file", required=False)
-    parser.add_argument("--folder", type=str, help="Path to the folder", required=False)
-    parser.add_argument("--mode", type=str, choices=["contact_distance"],
+    parser.add_argument("--file", type=str, required=False,
+                        help="Path to target file for contact distance and FMO input file generator.")
+    parser.add_argument("--folder", type=str, required=False,
+                        help="Path to target folder for contact distance and FMO input file generator.")
+    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo"],
                         required=True, help="Select a mode: contact_distance.")
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--distance_cutoff", type=float, required=False, default=8)
     parser.add_argument("--ignore_num_start_res", type=int, required=False, default=0)
     parser.add_argument("--ignore_num_end_res", type=int, required=False, default=0)
+    parser.add_argument("--renum_chains", nargs="+",
+                        help="List of chain:resid pairs (e.g., A:4 B:99 C:27). Renumbering starts from the resid.")
+    parser.add_argument("--basis", type=str, choices=["STO-3G", "6-31G*"], default="STO-3G", required=False,
+                        help="FMO basis set: STO-3G (default), 6-31G*")
+    parser.add_argument("--theory", type=str, choices=["HF", "MP2"], default="HF", required=False,
+                        help="FMO level of theory: HF (default), MP2")
 
     args = parser.parse_args()
     file_location = args.file
@@ -28,61 +39,101 @@ def main() -> None:
     ignore_num_start_res = args.ignore_num_start_res
     ignore_num_end_res = args.ignore_num_end_res
     mode = args.mode
+    renum_chains_list = args.renum_chains
+    basis = args.basis
+    theory = args.theory
+
+    if ignore_num_start_res < 0:
+        print(f"Error: --ignore_num_start_res must be >= 0")
+        logger.error(f"Error: --ignore_num_start_res must be >= 0")
+        return
+
+    if ignore_num_end_res < 0:
+        print(f"Error: --ignore_num_end_res must be >= 0")
+        logger.error(f"Error: --ignore_num_end_res must be >= 0")
+        return
 
     if not file_location and not folder_location:
         print(f"Error: Neither file or folder locations were provided.")
+        logger.error(f"Error: Neither file or folder locations were provided.")
         return
 
     if file_location and folder_location:
         print(f"Error: Cannot have both file and folder locations.")
+        logger.error(f"Error: Cannot have both file and folder locations.")
         return
 
     if not mode:
         print(f"Error: No mode provided. --mode must be: contact_distance")
+        logger.error(f"Error: No mode provided. --mode must be: contact_distance")
         return
     else:
         if mode not in mode_list:
             print(f"Error: Mode {mode} is not supported. --mode must be: contact_distance")
+            logger.error(f"Error: Mode {mode} is not supported. --mode must be: contact_distance")
             return
         else:
             print(f"Working in {mode} mode")
+            logger.info(f"Working in {mode} mode")
 
     if file_location:
         if not os.path.isfile(file_location):
             print(f"Error: The file {file_location} does not exist.")
+            logger.error(f"Error: The file {file_location} does not exist.")
             return
         else:
             print(f"Processing input file {file_location}")
+            logger.error(f"Processing input file {file_location}")
 
     if folder_location:
         if not os.path.isdir(folder_location):
             print(f"Error: The folder {folder_location} does not exist.")
+            logger.error(f"Error: The folder {folder_location} does not exist.")
             return
         else:
             print(f"Processing folder {folder_location}")
+            logger.info(f"Processing folder {folder_location}")
 
     if output_folder:
         if not os.path.isdir(output_folder):
             print(f"Error. The output folder {output_folder} does not exist. Create it first.")
+            logger.error(f"Error. The output folder {output_folder} does not exist. Create it first.")
             return
     else:
         print(f"Error: No output_folder specified. I don't know where to store results.")
+        logger.error(f"Error: No output_folder specified. I don't know where to store results.")
         return
 
-    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff, file_location, folder_location)
+    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff,
+                  basis, theory,
+                  renum_chains_list,
+                  file_location, folder_location)
 
 
-def mode_decision(mode: str, ignore_num_start_res: int, ignore_num_end_res: int, output_folder: str, distance_cutoff: float, file_location: str = None, folder_location: str = None) -> None:
+def mode_decision(mode: str,
+                  ignore_num_start_res: int,
+                  ignore_num_end_res: int,
+                  output_folder: str,
+                  distance_cutoff: float,
+                  basis: str,
+                  theory: str,
+                  renum_chains_list: List[str] = None,
+                  file_location: str = None,
+                  folder_location: str = None) -> None:
+    logger = get_logger(__name__)
     if mode == "contact_distance":
         contact_controller = ContactController(file_location, folder_location, output_folder, distance_cutoff)
-        validated = contact_controller.validate_inputs(ignore_num_start_res, ignore_num_end_res)
+        validated = contact_controller.validate_inputs(ignore_num_start_res, ignore_num_end_res, renum_chains_list)
         if not validated:
             print(f"Error: Unable to read inputs.")
+            logger.error(f"Error: Unable to read inputs.")
             return
 
         contact_controller.run_controller()
-
-
+    elif mode == "fmo":
+        fmo_controller = FMOController(basis, theory)
+        fmo_controller.validate_inputs(file_location, folder_location, output_folder)
+        fmo_controller.run_controller()
 
 
 if __name__ == '__main__':
