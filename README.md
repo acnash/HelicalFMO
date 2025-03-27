@@ -6,7 +6,7 @@ Fragment Molecular Orbital analysis for interhelical transmembrane protein inter
 
 <p align="center">
     <img src="doc/MMP14_TM.jpg" alt="Description" width="40%">
-</p>p>
+</p>
 
 This code performs several operations:
 
