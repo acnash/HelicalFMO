@@ -4,6 +4,10 @@
 
 Fragment Molecular Orbital analysis for interhelical transmembrane protein interactions. 
 
+<p align="center">
+    <img src="doc/MMP14_TM.jpg" alt="Description" width="40%">
+</p>p>
+
 This code performs several operations:
 
 1. Rotates helical transmembrane dimers and writes to PDB files.
