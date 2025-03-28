@@ -26,7 +26,10 @@ class CapController(Controller):
             chain_A_residues = universe.select_atoms("chainid A").residues
             for i, residue in enumerate(chain_A_residues):
                 resnum = residue.resid
+
+                # if the residue had an immediate left neighbour (resid - 1) then we don't need to cap it.
                 has_prev = i > 0 and chain_A_residues[i-1].resid == resnum - 1
+                # if the residue had an immediate right neighbour (resid +1) then we don't need to cap it.
                 has_next = i < len(chain_A_residues) - 1 and chain_A_residues[i + 1].resid == resnum + 1
 
                 if not has_prev:

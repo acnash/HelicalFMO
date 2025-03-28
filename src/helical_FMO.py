@@ -134,6 +134,7 @@ def mode_decision(mode: str,
     elif mode == "cap":
         cap_controller = CapController(file_location, folder_location)
         cap_controller.validate_inputs()
+        cap_controller.run_controller()
     elif mode == "fmo":
         fmo_controller = FMOController(basis, theory)
         fmo_controller.validate_inputs(file_location, folder_location, output_folder)

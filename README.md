@@ -19,8 +19,9 @@ This code performs several operations:
 ## Isolating protein-protein interaction residues
 
 ### Command line parameters
-- ```--file``` The PDB input file. The file must contain only two chains, A and B. All other chains are ignored.
 - ```--mode``` Set to ```contact_distance ``` to isolate protein-protein interaction residues.
+- ```--file``` The PDB input file. The file must contain only two chains, A and B. All other chains are ignored.
+- ```--folder``` Path to a folder containing one or more PDB input files. This is an alternative choice to the single input ```--file``` parameter.
 - ```--output_folder``` For each input file (whether that's a single file or a directory of files), a corresponding results PDB and data file will be saved to this location. The PDB file contains only those residues within contact distance, and the data file contains two lists of isolated residues. 
 - ```--distance_cutoff``` (default 3 angstrom) An atom-to-atom distance measure between residues. Residue pairs within (<=) 
 the cutoff distance are kept as interaction residues.
@@ -37,18 +38,29 @@ python helical_FMO.py --file C:\Users\Anthony\PyCharmProjects\HelicalFMO\structu
 
 ## Preparing PDB files for GAMESS FMO input file generator
 
-Before generating a GAMESS FMO input file, we need to ensure the input PDB file is formatted for such purpose. 
-Having isolated the interaction residues at the helix-helix interface, we need to cap those residues that lost their 
-peptide-bond neighbouring residue. We do this by adding a hydrogen atom to the cut nitrogen atom and cut carbon-carbonyl atom
-on the backbone, then a very short geometry optimisation is performed using PSI4 while keeping the original atoms
+Before generating a GAMESS FMO input file, we need to ensure the input PDB file is formatted for such purpose. This is tricky, and getting it wrong will add artificial energy contributions to the FMO analysis. Read carefully. 
+
+Having isolated the interaction residues at the helix-helix interface (using the steps above), we need to cap those residues that lost their 
+peptide-bond neighbouring residue e.g., of ARG-LYS-PRO-CYS, only LYS and CYS were within the contact cutoff, therefore they have both lost their peptide-bond to a neighbouring residue. 
+
+Capping involves adding a hydrogen atom to the cut nitrogen atom on the N-terms and a hydrogen atom to the cut carbon-carbonyl atom
+on the C-term, both, part of the peptide backbone. Then a very short geometry optimisation is performed using PSI4 while keeping the original atoms
 restrained. Adding hydrogen caps ensures that the residue retains its typical formal charge. 
+
+Note: the first residue on each chain must have started with a resid of 1 during protein-protein interaction residue steps detailed above. Also, the N and C terms of each chain are down to the User's discretion. 
+Setting the residue IDs to 1 instructs the program to avoiding adding a hydrogen atom cap to original N and C terms. If, for example, the protein-protein
+interaction step rejects the first residue on a chain (because it wasn't within a cutoff of a residue from the neighbouring chain), the first residue read will have a residue ID of 2. 
+The software, will know to add a hydrogen cap to that residue. 
 
 ### Command line parameters
 - ```--mode``` Set to ```cap ``` to add hydrogen cap atoms to cut residues.
+- ```--file``` The PDB input file. The file must contain only two chains, A and B. It's likely this file will have been generated having first performed ```--mode contact_distance```.
+- ```--folder``` Path to a folder containing one or more PDB input files. This is an alternative choice to the single input ```--file``` parameter.
+- ```--output_folder``` For each input file (whether that's a single file or a directory of files), new capped PDB files will be saved to this location.
 
-For example...
+For example, we cap a file refined to only include residues on both chains within a 3 angstrom interchain cutoff distance. A new file is saved to the ```--output_folder``` location.  
 ```
-Example of execution
+--file C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\contacts_0.pdb --mode cap --output_folder C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\
 ```
 
 ## Generating GAMESS FMO input files
