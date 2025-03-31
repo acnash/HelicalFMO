@@ -16,6 +16,14 @@ This code performs several operations:
 4. Generates GAMESS input file for FMO analysis based on nearest residue-residue PDB files.
 5. Performs 1 to 4 at scale.
 
+## Installation
+I've tried to keep the number of dependencies to a minimum. 
+
+- Clone HelicalFMO main. 
+- Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
+- Install PSI4 ```conda create -n psi4_env psi4 -c conda-forge```
+- Install geomeTRIC by changing to the psi4 environment ```conda activate psi4_env``` then ```conda install -c conda-forge geometric```
+
 ## Isolating protein-protein interaction residues
 
 ### Command line parameters
