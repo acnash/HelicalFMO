@@ -72,7 +72,10 @@ def renumber_chain_resids(u: mda.Universe, chain_list: List[str]) -> mda.Univers
 
     return new_u
 
-def sort_universe(u: mda.Universe) -> mda.Universe:
-    sorted_atoms = sorted(u.atoms, key=lambda x: (x.segid, x.residue.resid, x.name))
-    sorted_universe = mda.Universe(u.filename, atoms=sorted_atoms)
-    return sorted_universe
+#def sort_universe(u: mda.Universe) -> mda.Universe:
+#    sorted_atoms = sorted(u.atoms, key=lambda x: (x.segid, x.residue.resid, x.name))
+#    sorted_universe = mda.Universe(u.filename, atoms=sorted_atoms)
+#    return sorted_universe
+
+
+

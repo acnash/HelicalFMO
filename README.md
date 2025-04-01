@@ -21,8 +21,8 @@ I've tried to keep the number of dependencies to a minimum.
 
 - Clone HelicalFMO main. 
 - Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
-- Install PSI4 ```conda create -n psi4_env psi4 -c conda-forge```
-- Install geomeTRIC by changing to the psi4 environment ```conda activate psi4_env``` then ```conda install -c conda-forge geometric```
+- Install PSI4 `conda create -n psi4_env psi4 -c conda-forge`
+- Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`
 
 ## Isolating protein-protein interaction residues
 

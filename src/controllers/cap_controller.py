@@ -135,19 +135,54 @@ class CapController(Controller):
             if new_positions_A and new_positions_B:
                 # Merge old universe with new hydrogen atoms
                 merged = mda.Merge(universe.atoms, new_atoms_u_A.atoms, new_atoms_u_B.atoms)
-                pdb_writer.write_pdb_to_xyz(merged, "output_temp.xyz")
+                total_charge = self.__calculate_charge(merged)
+                pdb_writer.write_pdb_to_psi4in(merged, "output_temp.psi4in", total_charge)
                 pdb_writer.write_fragments_pdb("output_temp.pdb", merged)
-                #u = mda.Universe("output_test.pdb")
-                #merged = pdb_cleaner.sort_universe(u)
-                #pdb_writer.write_fragments_pdb("output_test.pdb", merged)
             elif new_positions_A and not new_positions_B:
                 merged = mda.Merge(universe.atoms, new_atoms_u_A.atoms)
-                #merged.atoms.write("output_test.pdb")
+                total_charge = self.__calculate_charge(merged)
+                pdb_writer.write_pdb_to_psi4in(merged, "output_temp.psi4in", total_charge)
                 pdb_writer.write_fragments_pdb("output_test.pdb", merged)
             elif not new_positions_A and new_positions_B:
                 merged = mda.Merge(universe.atoms, new_atoms_u_B.atoms)
-                #merged.atoms.write("output_test.pdb")
+                total_charge = self.__calculate_charge(merged)
+                pdb_writer.write_pdb_to_psi4in(merged, "output_temp.psi4in", total_charge)
                 pdb_writer.write_fragments_pdb("output_test.pdb", merged)
             else:
-                #universe.atoms.write("output_test.pdb")
+                total_charge = self.__calculate_charge(universe)
+                pdb_writer.write_pdb_to_psi4in(universe, "output_temp.psi4in", total_charge)
                 pdb_writer.write_fragments_pdb("output_test.pdb", universe)
+
+    def __calculate_charge(self, u: mda.Universe) -> int:
+        residue_charge = {
+            "GLY": 0,
+            "VAL": 0,
+            "ALA": 0,
+            "LEU": 0,
+            "ILE": 0,
+            "TRP": 0,
+            "TYR": 0,
+            "PHE": 0,
+            "MET": 0,
+            "SER": 0,
+            "HIS": 0,
+            "HID": 0,
+            "HIE": 0,
+            "HIP": 1,
+            "GLN": 0,
+            "GLU": -1,
+            "ARG": 1,
+            "LYS": 1,
+            "PRO": 0,
+            "THR": 0,
+            "CYS": 0,
+            "ASP": -1,
+            "ASN": 0,
+            "HYP": 0
+        }
+
+        total_charge = 0
+        for residue in u.residues:
+            total_charge = total_charge + residue_charge[residue.resname]
+
+        return total_charge

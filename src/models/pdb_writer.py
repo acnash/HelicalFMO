@@ -26,7 +26,8 @@ def write_found_residue_contacts(file_name: str, chain_list: List[AtomGroup], ch
     print(f"Residues written to {file_name}")
     logger.info(f"Residues written to {file_name}")
 
-def write_pdb_to_xyz(u: mda.Universe, output_file: str) -> None:
+
+def write_pdb_to_psi4in(u: mda.Universe, output_file: str, charge: int) -> None:
     element_atomic_number = {
         "H": 1,  # Hydrogen
         "He": 2,  # Helium
@@ -50,14 +51,24 @@ def write_pdb_to_xyz(u: mda.Universe, output_file: str) -> None:
     xyz_list = []
     for atom in u.atoms:
         element = atom.name[:2] if atom.name[:2] in element_atomic_number else atom.name[0]  # Extract element symbol from atom name
-        atomic_number = element_atomic_number[element]  # Placeholder (MDAnalysis doesn't store atomic numbers)
+        #atomic_number = element_atomic_number[element]  # Placeholder (MDAnalysis doesn't store atomic numbers)
         xyz_entry = f"{element} {atom.position[0]:.3f} {atom.position[1]:.3f} {atom.position[2]:.3f} \n"
         xyz_list.append(xyz_entry)
 
     with open(output_file, "w") as file:
-        file.write("".join([str(len(xyz_list)), "\n"]))
-        file.write("PDB optimising hydrogens\n")
+        file.write("molecule {\n")
+        file.write(str(charge) + " " + "1\n")
         file.writelines(xyz_list)
+        file.write("}\n")
+        file.write("\n")
+        file.write("memory 8 GB\n")
+        file.write("\n")
+        file.write("set basis sto-3g\n")
+        file.write("set num_threads 16\n")
+        file.write("set scf maxiter 10\n")
+        file.write("\n")
+        file.write("gradient('HF')\n")
+
 
 def update_pdb_from_xyz():
     pass
