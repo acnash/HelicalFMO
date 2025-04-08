@@ -22,7 +22,24 @@ I've tried to keep the number of dependencies to a minimum.
 - Clone HelicalFMO main. 
 - Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
 - Install PSI4 `conda create -n psi4_env psi4 -c conda-forge`
+- Install <a href="https://pypi.org/project/biopython/">Biopython.</a> 
+- Install <a href="https://github.com/clauswilke/PeptideBuilder">PeptideBuilder</a> with `pip install PeptideBuilder`
 - Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`
+
+---
+
+## Generating a helix-helix dimer from sequence
+
+HelicalFMO calls PeptideBuilder to build homo and hetero all-atom helical dimers.  
+
+---
+
+## Generating helix-helix starting structures as a function of rotation 
+
+HelicalFMO can take any helix-helix (two chain) PDB file and generate an ensemble of starting structures as a function of helical rotation. 
+
+---
+
 
 ## Isolating protein-protein interaction residues
 
@@ -44,6 +61,38 @@ For example, to isolate interaction residues within 3 angstrom, while renumberin
 python helical_FMO.py --file C:\Users\Anthony\PyCharmProjects\HelicalFMO\structures\4auo_single_chains_AB.pdb --mode contact_distance --output_folder C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\ --distance_cutoff 3 --renum_chains B:1
 ```
 
+### Output
+
+Two output files are generated per PDB input file. Firstly, the residues (resname and resid) within interhelical contact distance are written to a text file, for example:
+```
+Chain A Residues:
+GLN 46
+ARG 47
+SER 49
+LEU 51
+THR 52
+ILE 55
+SER 56
+VAL 59
+GLY 60
+LEU 63
+VAL 64
+Chain B Residues:
+GLN 6
+ARG 7
+SER 9
+LEU 11
+THR 12
+ILE 15
+SER 16
+VAL 19
+GLY 20
+LEU 23
+VAL 24
+``` 
+The second, a PDB file containing only those residues. 
+
+---
 ## Preparing PDB files for GAMESS FMO input file generator
 
 Before generating a GAMESS FMO input file, we need to ensure the input PDB file is formatted for such purpose. This is tricky, and getting it wrong will add artificial energy contributions to the FMO analysis. Read carefully. 
@@ -70,6 +119,7 @@ For example, we cap a file refined to only include residues on both chains withi
 ```
 --file C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\contacts_0.pdb --mode cap --output_folder C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\
 ```
+---
 
 ## Generating GAMESS FMO input files
 

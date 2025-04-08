@@ -34,6 +34,8 @@ class CapController(Controller):
             new_resids_B = []
             new_resnames_B = []
 
+
+
             chain_A_residues = universe.select_atoms("chainid A").residues
             for i, residue in enumerate(chain_A_residues):
                 resnum = residue.resid
@@ -136,8 +138,22 @@ class CapController(Controller):
                 # Merge old universe with new hydrogen atoms
                 merged = mda.Merge(universe.atoms, new_atoms_u_A.atoms, new_atoms_u_B.atoms)
                 total_charge = self.__calculate_charge(merged)
-                pdb_writer.write_pdb_to_psi4in(merged, "output_temp.psi4in", total_charge)
-                pdb_writer.write_fragments_pdb("output_temp.pdb", merged)
+
+                # make a reduced file for PSI4
+                self.reduce_structure(merged, "just_backbone.pdb")  # via MDAnalysis
+                just_backbone_universe = mda.Universe("just_backbone.pdb")  # via plain text editing
+
+                pdb_writer.write_pdb_to_psi4in(just_backbone_universe, "output_temp.psi4in", 0)
+
+                # run PSI4
+                # get the output
+                # remap positions of hydrogens to the 'merged' universe object
+
+                #pdb_writer.write_fragments_pdb("output_temp.pdb", just_backbone_universe)
+
+                # pdb_writer.write_pdb_to_psi4in(merged, "output_temp.psi4in", total_charge)
+                # pdb_writer.write_fragments_pdb("output_temp.pdb", merged)
+
             elif new_positions_A and not new_positions_B:
                 merged = mda.Merge(universe.atoms, new_atoms_u_A.atoms)
                 total_charge = self.__calculate_charge(merged)
@@ -186,3 +202,29 @@ class CapController(Controller):
             total_charge = total_charge + residue_charge[residue.resname]
 
         return total_charge
+
+    def reduce_structure(self, u: mda.Universe, output_file: str) -> None:
+
+        writer = mda.Writer(output_file, multiframe=False)
+        # Loop through each residue
+        for res in u.residues:
+            if res.resname in {"GLY", "PRO"}:
+                # Keep all atoms for glycine and proline
+                selected_atoms = res.atoms
+            else:
+                # Select backbone atoms and CB
+                selected_atoms = res.atoms.select_atoms("name N CA C O CB H HA HCT HNT")
+
+            if selected_atoms:
+                writer.write(selected_atoms)
+
+        writer.close()
+
+        with open(output_file, "r") as file:
+            content = file.read()
+
+        content = content.replace("CB ", "HX ")
+
+        with open(output_file, "w") as file:
+            file.write(content)
+

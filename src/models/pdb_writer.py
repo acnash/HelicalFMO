@@ -64,8 +64,6 @@ def write_pdb_to_psi4in(u: mda.Universe, output_file: str, charge: int) -> None:
         file.write("memory 8 GB\n")
         file.write("\n")
         file.write("set basis sto-3g\n")
-        file.write("set num_threads 16\n")
-        file.write("set scf maxiter 10\n")
         file.write("\n")
         file.write("gradient('HF')\n")
 
