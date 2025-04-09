@@ -25,12 +25,25 @@ I've tried to keep the number of dependencies to a minimum.
 - Install <a href="https://pypi.org/project/biopython/">Biopython.</a> 
 - Install <a href="https://github.com/clauswilke/PeptideBuilder">PeptideBuilder</a> with `pip install PeptideBuilder`
 - Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`
+- Install RDKit for Python
 
 ---
 
 ## Generating a helix-helix dimer from sequence
 
 HelicalFMO calls PeptideBuilder to build homo and hetero all-atom helical dimers.  
+
+### Command line parameters
+- ```--mode``` Set to ```generate``` to build a helix-helix dimer protein from sequence.
+- ```--seq_a``` Single amino acid codes e.g., ATLLIF for the first helical peptide.
+- ```--seq_b``` Single amino acid codes e.g., CFIAVG for the second helical peptide. If provided, a heterodimer is built. If not provided, a homodimer is built based on ```seq_a```.
+- ```--output_file``` File path and file name to save the generated hetero/homodimer as a PDB. 
+
+For example, to create a homodimer:
+
+```python helical_FMO.py --mode generate --seq_a KKEGIAVIAAVAWIGILGVLLKKR --output_file C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\homodimer.pdb```
+
+To create a heterodimer:
 
 ---
 
