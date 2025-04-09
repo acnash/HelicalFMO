@@ -4,6 +4,7 @@ import PeptideBuilder
 import Bio.PDB
 import MDAnalysis as mda
 import numpy as np
+from pymol import cmd
 
 
 class GenHelixController(Controller):
@@ -58,6 +59,15 @@ class GenHelixController(Controller):
         else:
             # process as a heterodimer
             pass #both A and B
+
+        # add hydrogens using open source Pymol
+        cmd.reinitialize()
+        cmd.load(self.output_file, "protein")
+        cmd.h_add("protein")
+        cmd.save(self.output_file, "protein")
+        cmd.quit()
+
+
 
         self.__calculate_average_helix_radius(self.output_file)
 
