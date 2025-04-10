@@ -61,13 +61,21 @@ class GenHelixController(Controller):
             pass #both A and B
 
         # add hydrogens using open source Pymol
-        cmd.reinitialize()
-        cmd.load(self.output_file, "protein")
-        cmd.h_add("protein")
-        cmd.save(self.output_file, "protein")
-        cmd.quit()
+        #cmd.reinitialize()
+        #cmd.load(self.output_file, "protein")
+        #cmd.h_add("protein")
+        #cmd.save(self.output_file, "protein")
+        #cmd.quit()
 
+        cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
 
+        with open(self.output_file, "r") as pdb_file:
+            pdb_content = pdb_file.readlines()
+
+        pdb_content.insert(0, cryst1_line)
+
+        with open(self.output_file, "w") as modified_file:
+            modified_file.writelines(pdb_content)
 
         self.__calculate_average_helix_radius(self.output_file)
 
