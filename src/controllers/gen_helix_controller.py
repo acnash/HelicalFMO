@@ -1,3 +1,5 @@
+import MDAnalysis
+from sys import stdout
 from src.controllers.controller import Controller
 from PeptideBuilder import Geometry
 import PeptideBuilder
@@ -5,7 +7,11 @@ import Bio.PDB
 import MDAnalysis as mda
 import numpy as np
 from MDAnalysis.lib.transformations import rotation_matrix
-from pymol import cmd
+from openmm.app import *
+from openmm import *
+import openmm.unit as unit
+
+from src.models import pdb_writer
 
 
 class GenHelixController(Controller):
@@ -90,10 +96,26 @@ class GenHelixController(Controller):
         new_resids_A = []
         new_resnames_A = []
 
+        residuesA = uniA.select_atoms("all").residues
+        for i, residue in enumerate(residuesA):
+            for atom in residue:
+                new_names_A.append(atom.name)
+                new_positions_A.append(atom.positions)
+            new_resnames_A.append(residue.resname)
+            new_resids_A.append(i+1)
+
         new_positions_B = []
         new_names_B = []
         new_resids_B = []
         new_resnames_B = []
+
+        residuesB = uniA.select_atoms("all").residues
+        for i, residue in enumerate(residuesB):
+            for atom in residue:
+                new_names_B.append(atom.name)
+                new_positions_B.append(atom.positions)
+            new_resnames_B.append(residue.resname)
+            new_resids_B.append(i+1)
 
         # add chain Label A
         new_atoms_u_A = mda.Universe.empty(n_atoms=len(new_positions_A),
@@ -119,52 +141,47 @@ class GenHelixController(Controller):
         new_atoms_u_B.atoms.chainIDs = "B"
         new_atoms_u_B.atoms.positions = np.array(new_positions_B)
 
-        # make sure the resids in each chain start from 1
-
         # combine and save to a file
+        merged = mda.Merge(new_atoms_u_A.atoms, new_atoms_u_B.atoms)
+        pdb_writer.write_fragments_pdb("../temp/initial_dimer.pdb", merged)
+
+        # add the cryst1_line to the top of the file
+        cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
+        with open("../temp/initial_dimer.pdb", "r") as pdb_file:
+            pdb_content = pdb_file.readlines()
+        pdb_content.insert(0, cryst1_line)
+        with open("../temp/initial_dimer.pdb", "w") as modified_file:
+            modified_file.writelines(pdb_content)
 
         # load into OpenMM and run an energy minimisation
+        self.__minimise_structure("../temp/initial_dimer.pdb")
 
         # when the program starts check whether ./temp exists. If it doesn't, make it
 
 
+    def __minimise_structure(self, input_file: str):
+        pdb = PDBFile(input_file)
+        forcefield = ForceField('amber99sb.xml', 'tip3p.xml')
+        modeller = Modeller(pdb.topology, pdb.positions)
+        modeller.addHydrogens(forcefield)  # ← ADD correct hydrogens
+        with open("../temp/dimer_h.pdb", "w") as file:
+            PDBFile.writeFile(modeller.topology, modeller.positions, file)
+        pdb = PDBFile('../temp/dimer_h.pdb')
+        system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME, nonbondedCutoff=1 * unit.nanometer,
+                                         constraints=HBonds)
+        integrator = LangevinIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.002 * unit.picoseconds)
+        simulation = Simulation(pdb.topology, system, integrator)
+        simulation.context.setPositions(pdb.positions)
+        simulation.minimizeEnergy()
 
-            #geo_B = Geometry.geometry(self.sequence_B)
-            #geo_B.phi = -60
-            #geo_B.psi_im1 = -40
-            #structure_B = PeptideBuilder.initialize_res(geo_B)
-            #PeptideBuilder.add_residue(structure_B, geo_B)
-            #PeptideBuilder.add_terminal_OXT(structure_B)
+        minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+        with open(self.output_file, 'w') as f:
+            PDBFile.writeFile(simulation.topology, minimized_positions, f)
+        #simulation.reporters.append(PDBReporter('output.pdb', 1000))
+        #simulation.reporters.append(StateDataReporter(stdout, 1000, step=True, potentialEnergy=True, temperature=True))
+        #simulation.step(10000)
 
-        # process as a homodimer
-        if not self.sequence_B:
-            out = Bio.PDB.PDBIO()
-            out.set_structure(structure_A)
-            out.save(self.output_file)
-        else:
-            # process as a heterodimer
-            pass #both A and B
-
-        # add hydrogens using open source Pymol
-        #cmd.reinitialize()
-        #cmd.load(self.output_file, "protein")
-        #cmd.h_add("protein")
-        #cmd.save(self.output_file, "protein")
-        #cmd.quit()
-
-        cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
-
-        with open(self.output_file, "r") as pdb_file:
-            pdb_content = pdb_file.readlines()
-
-        pdb_content.insert(0, cryst1_line)
-
-        with open(self.output_file, "w") as modified_file:
-            modified_file.writelines(pdb_content)
-
-        self.__calculate_average_helix_radius(self.output_file)
-
-    def align_principal_axis_to_z(selection):
+    def __align_principal_axis_to_z(selection: MDAnalysis.AtomGroup):
         # Calculate the principal axes
         principal_axes = selection.principal_axes()
         # The first principal axis corresponds to the largest eigenvalue
