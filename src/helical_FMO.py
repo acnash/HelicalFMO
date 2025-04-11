@@ -5,12 +5,14 @@ from typing import List
 
 from logger_config import get_logger
 from controllers.contact_controller import ContactController
+from src.controllers.cap_controller import CapController
 from src.controllers.fmo_controller import FMOController
+from src.controllers.gen_helix_controller import GenHelixController
 
 
 def main() -> None:
     logger = get_logger(__name__)
-    mode_list = ["contact_distance", "fmo"]
+    mode_list = ["contact_distance", "fmo", "cap", "generate"]
 
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
 
@@ -18,9 +20,9 @@ def main() -> None:
                         help="Path to target file for contact distance and FMO input file generator.")
     parser.add_argument("--folder", type=str, required=False,
                         help="Path to target folder for contact distance and FMO input file generator.")
-    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo"],
+    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo", "cap", "generate"],
                         required=True, help="Select a mode: contact_distance.")
-    parser.add_argument("--output_folder", type=str, required=True)
+    parser.add_argument("--output_folder", type=str, required=False)
     parser.add_argument("--distance_cutoff", type=float, required=False, default=8)
     parser.add_argument("--ignore_num_start_res", type=int, required=False, default=0)
     parser.add_argument("--ignore_num_end_res", type=int, required=False, default=0)
@@ -30,6 +32,10 @@ def main() -> None:
                         help="FMO basis set: STO-3G (default), 6-31G*")
     parser.add_argument("--theory", type=str, choices=["HF", "MP2"], default="HF", required=False,
                         help="FMO level of theory: HF (default), MP2")
+    parser.add_argument("--seq_a", type=str, required=False, help="First helix sequence (if provided alone, forms a homodimer).")
+    parser.add_argument("--seq_b", type=str, required=False,
+                        help="Second helix sequence to form a heterodimer")
+    parser.add_argument("--output_file", type=str, required=False, help="File path and file name to save the generated hetero/homodimer as a PDB.")
 
     args = parser.parse_args()
     file_location = args.file
@@ -42,6 +48,9 @@ def main() -> None:
     renum_chains_list = args.renum_chains
     basis = args.basis
     theory = args.theory
+    sequence_A = args.seq_a
+    sequence_B = args.seq_b
+    output_file = args.output_file
 
     if ignore_num_start_res < 0:
         print(f"Error: --ignore_num_start_res must be >= 0")
@@ -53,10 +62,11 @@ def main() -> None:
         logger.error(f"Error: --ignore_num_end_res must be >= 0")
         return
 
-    if not file_location and not folder_location:
-        print(f"Error: Neither file or folder locations were provided.")
-        logger.error(f"Error: Neither file or folder locations were provided.")
-        return
+    # these should be pushed into the controller as a validate method
+    #if not file_location and not folder_location:
+    #    print(f"Error: Neither file or folder locations were provided.")
+    #    logger.error(f"Error: Neither file or folder locations were provided.")
+    #    return
 
     if file_location and folder_location:
         print(f"Error: Cannot have both file and folder locations.")
@@ -94,20 +104,29 @@ def main() -> None:
             print(f"Processing folder {folder_location}")
             logger.info(f"Processing folder {folder_location}")
 
-    if output_folder:
-        if not os.path.isdir(output_folder):
-            print(f"Error. The output folder {output_folder} does not exist. Create it first.")
-            logger.error(f"Error. The output folder {output_folder} does not exist. Create it first.")
-            return
-    else:
-        print(f"Error: No output_folder specified. I don't know where to store results.")
-        logger.error(f"Error: No output_folder specified. I don't know where to store results.")
-        return
+    #if output_folder:
+    #    if not os.path.isdir(output_folder):
+    #        print(f"Error. The output folder {output_folder} does not exist. Create it first.")
+    #        logger.error(f"Error. The output folder {output_folder} does not exist. Create it first.")
+    #        return
+    #else:
+    #    print(f"Error: No output_folder specified. I don't know where to store results.")
+    #    logger.error(f"Error: No output_folder specified. I don't know where to store results.")
+    #    return
 
-    mode_decision(mode, ignore_num_start_res, ignore_num_end_res, output_folder, distance_cutoff,
-                  basis, theory,
+    mode_decision(mode,
+                  ignore_num_start_res,
+                  ignore_num_end_res,
+                  output_folder,
+                  distance_cutoff,
+                  basis,
+                  theory,
+                  sequence_A,
+                  sequence_B,
+                  output_file,
                   renum_chains_list,
-                  file_location, folder_location)
+                  file_location,
+                  folder_location)
 
 
 def mode_decision(mode: str,
@@ -117,6 +136,9 @@ def mode_decision(mode: str,
                   distance_cutoff: float,
                   basis: str,
                   theory: str,
+                  sequence_A: str,
+                  sequence_B: str,
+                  output_file: str,
                   renum_chains_list: List[str] = None,
                   file_location: str = None,
                   folder_location: str = None) -> None:
@@ -124,16 +146,29 @@ def mode_decision(mode: str,
     if mode == "contact_distance":
         contact_controller = ContactController(file_location, folder_location, output_folder, distance_cutoff)
         validated = contact_controller.validate_inputs(ignore_num_start_res, ignore_num_end_res, renum_chains_list)
-        if not validated:
+        if validated:
+            contact_controller.run_controller()
+        else:
             print(f"Error: Unable to read inputs.")
             logger.error(f"Error: Unable to read inputs.")
-            return
-
-        contact_controller.run_controller()
+    elif mode == "cap":
+        cap_controller = CapController(file_location, folder_location)
+        cap_controller.validate_inputs()
+        cap_controller.run_controller()
     elif mode == "fmo":
         fmo_controller = FMOController(basis, theory)
         fmo_controller.validate_inputs(file_location, folder_location, output_folder)
         fmo_controller.run_controller()
+    elif mode == "generate":
+        gen_helix_controller = GenHelixController(sequence_A, sequence_B, output_file)
+        validated = gen_helix_controller.validate_inputs()
+        if validated:
+            gen_helix_controller.run_controller()
+        else:
+            print(f"Error: Unable to read inputs for generating a helical dimer.")
+            logger.error(f"Error: Unable to read inputs for generating a helical dimer.")
+
+
 
 
 if __name__ == '__main__':
