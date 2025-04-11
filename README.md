@@ -1,8 +1,19 @@
 # HelicalFMO
 
-## UNDER ACTIVE DEVELOPMENT (27.03.2025)
+## UNDER ACTIVE DEVELOPMENT (11.04.2025)
 
-Fragment Molecular Orbital analysis for interhelical transmembrane protein interactions. 
+__To do__
+1. Move command line inputs into a YAML format.
+2. Add the rotation code.
+3. Go through and implement fault tolerance.
+4. Go through and implement Logger.
+5. Implement a cross-angle and Left/Right handedness.
+6. Implement a slab model to approximate an implicit lipid bilayer.
+7. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
+
+---
+
+Fragment Molecular Orbital analysis for inter-helical transmembrane dimer residue interactions. 
 
 <p align="center">
     <img src="doc/MMP14_TM.jpg" alt="Description" width="40%">
@@ -10,11 +21,12 @@ Fragment Molecular Orbital analysis for interhelical transmembrane protein inter
 
 This code performs several operations:
 
-1. Rotates helical transmembrane dimers and writes to PDB files.
-2. Writes nearest residue-residue atomic records to PDF files. 
-3. Caps isolated peptide fragments with hydrogen atoms to ensure the overall formal charge is consistent with the original structure. 
-4. Generates GAMESS input file for FMO analysis based on nearest residue-residue PDB files.
-5. Performs 1 to 4 at scale.
+1. Generated _de novo_ transmembrane dimers.
+2. Rotates helical transmembrane dimers and writes to PDB files.
+3. Writes nearest residue-residue atomic records to PDF files. 
+4. Caps isolated peptide fragments with hydrogen atoms to ensure the overall formal charge is consistent with the original structure. 
+5. Generates GAMESS input file for FMO analysis based on nearest residue-residue PDB files.
+6. Performs 1 to 5 at scale.
 
 ## Isolating protein-protein interaction residues
 
@@ -65,10 +77,17 @@ For example, we cap a file refined to only include residues on both chains withi
 
 ## Generating GAMESS FMO input files
 
+This code builds a GAMESS input file for FMO analysis. All residues in ```--file``` will be included. It's essential to run ```--mode cap``` before (see above) 
+to prepare the PDB file. This ensures the appropriate residues are included from a well-formed PDB file; residues IDs start from 1, and peptides are delimited by Chain A and B. 
+
+The GAMESS input file is stored in ```--output_folder```.
+
 ### Command line parameters
 - ```--mode``` Set to ```fmo ``` to build GAMESS FMO input files.
-- ```...``` -
-- ```...``` - 
+- ```--file``` The path a PDB input file.
+- ```--output_folder``` The folder path to the generated GAMESS FMO input file. 
+- ```--basis``` The basis set added to the GAMESS input file. Options are ```STO-3G``` (default) and ```"6-31G*"```. They represent low and reasonable accuracy, respectively.  
+- ```--theory``` The level of quantum theory added to the GAMESS input file. Options are ```HF``` (default) and ```MP2```.
 
 For example...
 ```
