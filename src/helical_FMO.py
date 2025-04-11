@@ -14,6 +14,10 @@ def main() -> None:
     logger = get_logger(__name__)
     mode_list = ["contact_distance", "fmo", "cap", "generate"]
 
+    temp_folder = "../temp"
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
+
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
 
     parser.add_argument("--file", type=str, required=False,
