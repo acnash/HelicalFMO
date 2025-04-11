@@ -74,8 +74,8 @@ class GenHelixController(Controller):
         outB.save("../temp/helixB.pdb")
 
         # calculate the average radius of each helix; keep the longest
-        _, radius_A = self.__calculate_average_helix_radius("../temp/helixA.pdb")
-        _, radius_B = self.__calculate_average_helix_radius("../temp/helixB.pdb")
+        max_A, radius_A = self.__calculate_average_helix_radius("../temp/helixA.pdb")
+        max_B, radius_B = self.__calculate_average_helix_radius("../temp/helixB.pdb")
 
         # load both structures MDAnalysis.
         uniA = mda.Universe("../temp/helixA.pdb")
@@ -85,42 +85,54 @@ class GenHelixController(Controller):
         selA = uniA.select_atoms("all")
         selB = uniB.select_atoms("all")
 
+        #this does not work
         self.__align_principal_axis_to_z(selA)
         self.__align_principal_axis_to_z(selB)
 
         # Translate helixB
-        selB.translate([max(radius_A, radius_B), 0.0, 0.0])
+        selB.translate([max(max_A*2, max_B*2)+3.6, 0.0, 0.0])
 
+        # collect properties to rebuild the universe
         new_positions_A = []
         new_names_A = []
         new_resids_A = []
         new_resnames_A = []
 
-        residuesA = uniA.select_atoms("all").residues
+        residuesA = selA.residues
+        residue_atom_counts_A = []
         for i, residue in enumerate(residuesA):
-            for atom in residue:
+            for atom in residue.atoms:
+
                 new_names_A.append(atom.name)
-                new_positions_A.append(atom.positions)
+                new_positions_A.append(atom.position)
             new_resnames_A.append(residue.resname)
             new_resids_A.append(i+1)
+            residue_atom_counts_A.append(len(residue.atoms))
 
         new_positions_B = []
         new_names_B = []
         new_resids_B = []
         new_resnames_B = []
 
-        residuesB = uniA.select_atoms("all").residues
+        residuesB = selB.residues
+        residue_atom_counts_B = []
         for i, residue in enumerate(residuesB):
-            for atom in residue:
+            for atom in residue.atoms:
                 new_names_B.append(atom.name)
-                new_positions_B.append(atom.positions)
+                new_positions_B.append(atom.position)
             new_resnames_B.append(residue.resname)
             new_resids_B.append(i+1)
+            residue_atom_counts_B.append(len(residue.atoms))
 
         # add chain Label A
+
+
+        atom_resindex_A = np.concatenate([
+            np.full(count, i, dtype=int) for i, count in enumerate(residue_atom_counts_A)
+        ])
         new_atoms_u_A = mda.Universe.empty(n_atoms=len(new_positions_A),
-                                           n_residues=len(new_positions_A),
-                                           atom_resindex=np.arange(len(new_positions_A)),
+                                           n_residues=len(new_resnames_A),
+                                           atom_resindex=atom_resindex_A,
                                            trajectory=True)
         new_atoms_u_A.add_TopologyAttr("name", new_names_A)
         new_atoms_u_A.add_TopologyAttr("resid", new_resids_A)
@@ -130,9 +142,12 @@ class GenHelixController(Controller):
         new_atoms_u_A.atoms.positions = np.array(new_positions_A)
 
         # add chain Label B
+        atom_resindex_B = np.concatenate([
+            np.full(count, i, dtype=int) for i, count in enumerate(residue_atom_counts_B)
+        ])
         new_atoms_u_B = mda.Universe.empty(n_atoms=len(new_positions_B),
-                                           n_residues=len(new_positions_B),
-                                           atom_resindex=np.arange(len(new_positions_B)),
+                                           n_residues=len(new_resnames_B),
+                                           atom_resindex=atom_resindex_B,
                                            trajectory=True)
         new_atoms_u_B.add_TopologyAttr("name", new_names_B)
         new_atoms_u_B.add_TopologyAttr("resid", new_resids_B)
@@ -143,21 +158,68 @@ class GenHelixController(Controller):
 
         # combine and save to a file
         merged = mda.Merge(new_atoms_u_A.atoms, new_atoms_u_B.atoms)
+        #merged.trajectory.unitcell = [100.0, 100.0, 100.0, 90.0, 90.0, 90.0]
         pdb_writer.write_fragments_pdb("../temp/initial_dimer.pdb", merged)
 
         # add the cryst1_line to the top of the file
         cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
         with open("../temp/initial_dimer.pdb", "r") as pdb_file:
             pdb_content = pdb_file.readlines()
-        pdb_content.insert(0, cryst1_line)
+
+        # Find the CRYST1 line and replace it
+        for i, line in enumerate(pdb_content):
+            if line.startswith("CRYST1"):
+                pdb_content[i] = cryst1_line
+                break
+
         with open("../temp/initial_dimer.pdb", "w") as modified_file:
             modified_file.writelines(pdb_content)
+
+        self.__move_helix_to_center_of_unit_cell("../temp/initial_dimer.pdb")
 
         # load into OpenMM and run an energy minimisation
         self.__minimise_structure("../temp/initial_dimer.pdb")
 
         # when the program starts check whether ./temp exists. If it doesn't, make it
 
+    def __move_helix_to_center_of_unit_cell(self, pdb_file):
+
+        with open(pdb_file, "r") as file:
+            for line in file:
+                if line.startswith("CRYST1"):
+                    # Extract the six cell dimensions from the CRYST1 line
+                    cell_params = line[6:54].strip().split()
+                    cell = np.array([float(val) for val in cell_params])
+                    break
+            else:
+                raise ValueError("No CRYST1 line found in the PDB file")
+
+        # Load the universe
+        u = mda.Universe(pdb_file)
+
+        # Select atoms of the helix (example: using Cα atoms)
+        helix = u.select_atoms("all")
+
+        # Parse the unit cell dimensions from the string
+        #cell = np.array([float(val) for val in cell_string.split()])
+
+        # Compute the center of the unit cell (only using the first three dimensions)
+        unit_cell_center = cell[:3] / 2
+
+        # Get the center of geometry of the helix (average position of all Cα atoms)
+        helix_center = helix.center_of_geometry()
+
+        # Calculate the shift needed to move the helix to the center of the unit cell
+        shift_vector = unit_cell_center - helix_center
+
+        # Apply the shift to the atom positions
+        helix.positions += shift_vector
+
+        # Optionally, save the new structure to a file
+        with mda.Writer(pdb_file, u.atoms.n_atoms) as w:
+            w.write(u)
+
+        return helix.positions
 
     def __minimise_structure(self, input_file: str):
         pdb = PDBFile(input_file)
@@ -175,21 +237,78 @@ class GenHelixController(Controller):
         simulation.minimizeEnergy()
 
         minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+        simulation.reporters.append(PDBReporter('output.pdb', 1000))
+        simulation.reporters.append(StateDataReporter(stdout, 1000, step=True, potentialEnergy=True, temperature=True))
+        simulation.step(10000)
         with open(self.output_file, 'w') as f:
             PDBFile.writeFile(simulation.topology, minimized_positions, f)
-        #simulation.reporters.append(PDBReporter('output.pdb', 1000))
-        #simulation.reporters.append(StateDataReporter(stdout, 1000, step=True, potentialEnergy=True, temperature=True))
-        #simulation.step(10000)
 
-    def __align_principal_axis_to_z(selection: MDAnalysis.AtomGroup):
-        # Calculate the principal axes
-        principal_axes = selection.principal_axes()
-        # The first principal axis corresponds to the largest eigenvalue
-        main_axis = principal_axes[0]
-        # Calculate the rotation matrix to align this axis with the z-axis
-        R = rotation_matrix(main_axis, [0, 0, 1])
+    def __align_principal_axis_to_z(self, selection):
+        # Calculate the principal axis (longest moment of inertia axis)
+        #principal_axis = selection.principal_axes()[0]
+        #principal_axis /= np.linalg.norm(principal_axis)
+
+        com = selection.center_of_mass()
+
+        # Calculate the axis of the helix by fitting a line through the backbone atoms
+        backbone = selection.select_atoms("backbone")  # Or use all atoms if needed
+        backbone_positions = backbone.positions
+        p0 = backbone_positions[0]
+        p1 = backbone_positions[-1]
+
+        # Helix axis is the vector between the first and last backbone atoms
+        helix_axis = p1 - p0
+        helix_axis /= np.linalg.norm(helix_axis)  # Normalize the helix axis
+
+        # Define the z-axis
+        z_axis = np.array([0.0, 0.0, 1.0])
+
+        # Compute rotation axis (cross product) and angle
+        rot_axis = np.cross(helix_axis, z_axis)
+        rot_axis_norm = np.linalg.norm(rot_axis)
+
+        if rot_axis_norm < 1e-6:
+            # Already aligned with z-axis (or exactly opposite)
+            if np.dot(principal_axis, z_axis) < 0:
+                # 180° rotation around any perpendicular axis
+                rot_axis = np.array([1.0, 0.0, 0.0])
+                angle = np.pi
+            else:
+                return  # Already aligned
+        else:
+            rot_axis /= rot_axis_norm
+            angle = np.arccos(np.clip(np.dot(helix_axis, z_axis), -1.0, 1.0))
+
+        # Build the rotation matrix
+        #R = rotation_matrix(angle, rot_axis)
+
+        R = self.__rotation_matrix(angle, rot_axis)
+
         # Apply the rotation
-        selection.rotate(R)
+        selection.rotate(R[:3, :3])
+
+    def __rotation_matrix(self, angle, axis):
+        """
+        Creates a rotation matrix for a given angle and axis.
+        This uses the Rodrigues' rotation formula.
+        """
+        axis = axis / np.linalg.norm(axis)  # Normalize axis
+
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+        x, y, z = axis
+
+        # Rotation matrix formula
+        R = np.array([
+            [cos_angle + x ** 2 * (1 - cos_angle), x * y * (1 - cos_angle) - z * sin_angle,
+             x * z * (1 - cos_angle) + y * sin_angle],
+            [y * x * (1 - cos_angle) + z * sin_angle, cos_angle + y ** 2 * (1 - cos_angle),
+             y * z * (1 - cos_angle) - x * sin_angle],
+            [z * x * (1 - cos_angle) - y * sin_angle, z * y * (1 - cos_angle) + x * sin_angle,
+             cos_angle + z ** 2 * (1 - cos_angle)]
+        ])
+
+        return R
 
     def __calculate_average_helix_radius(self, pdb_file) -> (float, float):
         u = mda.Universe(pdb_file)
@@ -221,7 +340,7 @@ class GenHelixController(Controller):
             radii.append(radius)
 
         max_radius = np.max(radii)
-        average_radius = np.average(radii)
+        average_radius = np.median(radii)
 
         return max_radius, average_radius
 
