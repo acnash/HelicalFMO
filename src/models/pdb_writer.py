@@ -2,8 +2,11 @@ from typing import List
 
 import MDAnalysis as mda
 from MDAnalysis import AtomGroup
+import warnings
 
 from src.logger_config import get_logger
+
+warnings.filterwarnings("ignore")  # turn off MDAnalysis warning when writing PDB files
 
 
 def write_fragments_pdb(file_name: str, close_atoms) -> None:
