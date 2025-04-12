@@ -3,6 +3,8 @@ import numpy as np
 from MDAnalysis.lib.transformations import rotation_matrix
 from sys import stdout
 
+from numpy.linalg import norm
+
 from src.controllers.controller import Controller
 
 from openmm.app import *
@@ -57,36 +59,32 @@ class RotationController(Controller):
 
                 self.__minimise_structure(outname)
 
-                # Undo Chain B rotation
-                #self.__rotate_selection(chainB, -step_rad, axis_B, center_B)
-
-            # Undo Chain A rotation before next A rotation
-            #self.__rotate_selection(chainA, -step_rad, axis_A, center_A)
 
 
     def __minimise_structure(self, input_file: str):
         pdb = PDBFile(input_file)
-        forcefield = ForceField('amber99sb.xml', 'tip3p.xml')
-        #modeller = Modeller(pdb.topology, pdb.positions)
-        #modeller.addHydrogens(forcefield)  # ← ADD correct hydrogens
-        #with open("../temp/dimer_h.pdb", "w") as file:
-        #    PDBFile.writeFile(modeller.topology, modeller.positions, file)
-        #pdb = PDBFile('../temp/dimer_h.pdb')
-        system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME, nonbondedCutoff=1 * unit.nanometer,
-                                         constraints=HBonds)
-        integrator = LangevinIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
+        forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
+        system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
+                                         nonbondedCutoff=1 * unit.nanometer, constraints=HBonds)
+        integrator = LangevinMiddleIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
         simulation = Simulation(pdb.topology, system, integrator)
         simulation.context.setPositions(pdb.positions)
-        simulation.minimizeEnergy()
+        simulation.minimizeEnergy(tolerance=1*unit.kilojoule/unit.mole/unit.nanometer, maxIterations=5000)
+        minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+        with open("minimised.pdb", 'w') as f:
+            PDBFile.writeFile(simulation.topology, minimized_positions, f)
 
-
-        #simulation.reporters.append(PDBReporter('output.pdb', 100))
-        #simulation.reporters.append(StateDataReporter(stdout, 100, step=True, potentialEnergy=True, temperature=True))
+        simulation.context.setVelocitiesToTemperature(600 * unit.kelvin)
+        simulation.reporters.append(StateDataReporter(stdout, 5, step=True, potentialEnergy=True, temperature=True))
         print(f"Resolving potential side chain clashes on {input_file}")
         try:
-            simulation.step(500)
+            simulation.step(50)
         except:
-
+            pass
+            #forces = simulation.context.getState(getForces=True).getForces()
+            #for a, f in zip(simulation.topology.atoms(), forces):
+            #    if norm(f) > 10000 * unit.kilojoules_per_mole / unit.nanometer:
+            #        print(a, f)
 
         minimized_positions = simulation.context.getState(getPositions=True).getPositions()
         with open(input_file, 'w') as f:

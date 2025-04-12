@@ -90,7 +90,7 @@ class GenHelixController(Controller):
         self.__align_principal_axis_to_z(selB)
 
         # Translate helixB
-        selB.translate([max(max_A*2, max_B*2)+3.6, 0.0, 0.0])
+        selB.translate([max(max_A*2, max_B*2)+13.8, 0.0, 0.0])
 
         # collect properties to rebuild the universe
         new_positions_A = []
