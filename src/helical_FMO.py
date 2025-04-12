@@ -8,11 +8,12 @@ from controllers.contact_controller import ContactController
 from src.controllers.cap_controller import CapController
 from src.controllers.fmo_controller import FMOController
 from src.controllers.gen_helix_controller import GenHelixController
+from src.controllers.rotation_controller import RotationController
 
 
 def main() -> None:
     logger = get_logger(__name__)
-    mode_list = ["contact_distance", "fmo", "cap", "generate"]
+    mode_list = ["contact_distance", "fmo", "cap", "generate", "rotation"]
 
     temp_folder = "../temp"
     if not os.path.exists(temp_folder):
@@ -24,8 +25,8 @@ def main() -> None:
                         help="Path to target file for contact distance and FMO input file generator.")
     parser.add_argument("--folder", type=str, required=False,
                         help="Path to target folder for contact distance and FMO input file generator.")
-    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo", "cap", "generate"],
-                        required=True, help="Select a mode: contact_distance.")
+    parser.add_argument("--mode", type=str, choices=["contact_distance", "fmo", "cap", "generate", "rotation"],
+                        required=True, help="Select a mode: contact_distance, fmo, cap, generate, rotation.")
     parser.add_argument("--output_folder", type=str, required=False)
     parser.add_argument("--distance_cutoff", type=float, required=False, default=8)
     parser.add_argument("--ignore_num_start_res", type=int, required=False, default=0)
@@ -40,6 +41,7 @@ def main() -> None:
     parser.add_argument("--seq_b", type=str, required=False,
                         help="Second helix sequence to form a heterodimer")
     parser.add_argument("--output_file", type=str, required=False, help="File path and file name to save the generated hetero/homodimer as a PDB.")
+    parser.add_argument("--rotation_angle", type=int, default=20, required=False, help="The rotation angle. Default is 20 degrees. ")
 
     args = parser.parse_args()
     file_location = args.file
@@ -55,6 +57,7 @@ def main() -> None:
     sequence_A = args.seq_a
     sequence_B = args.seq_b
     output_file = args.output_file
+    rotation_angle = args.rotation_angle
 
     if ignore_num_start_res < 0:
         print(f"Error: --ignore_num_start_res must be >= 0")
@@ -127,6 +130,7 @@ def main() -> None:
                   theory,
                   sequence_A,
                   sequence_B,
+                  rotation_angle,
                   output_file,
                   renum_chains_list,
                   file_location,
@@ -142,6 +146,7 @@ def mode_decision(mode: str,
                   theory: str,
                   sequence_A: str,
                   sequence_B: str,
+                  rotation_angle: int,
                   output_file: str,
                   renum_chains_list: List[str] = None,
                   file_location: str = None,
@@ -171,6 +176,10 @@ def mode_decision(mode: str,
         else:
             print(f"Error: Unable to read inputs for generating a helical dimer.")
             logger.error(f"Error: Unable to read inputs for generating a helical dimer.")
+    elif mode == "rotation":
+        rotation_controller = RotationController(file_location, output_folder, rotation_angle)
+        rotation_controller.validate_inputs()
+        rotation_controller.run_controller()
 
 
 

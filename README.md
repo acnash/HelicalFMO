@@ -51,6 +51,17 @@ To create a heterodimer:
 
 HelicalFMO can take any helix-helix (two chain) PDB file and generate an ensemble of starting structures as a function of helical rotation. 
 
+### Command line parameters
+- ```--mode``` Set to ```rotation``` to generate a directory of helix-helix structures delimited by different rotation angle between the two helices.
+- ```--file``` The PDB input file. The file must contain only two chains, A and B. All other chains are ignored.
+- ```--output_folder``` The folder path output PDB files are saved to.
+- ```--rotation_angle``` The rotation angle. Default is 20 degrees. 
+- ```--both_helices``` If set to False, helix A is held fixed while helix A will rotate. When true (default) both helices rotate.
+
+For example:
+
+```python helical_FMO.py --mode rotation --rotation_angle 20 --file C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\homodimer.pdb --output_folder C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\```
+
 ---
 
 

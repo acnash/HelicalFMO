@@ -1,11 +1,13 @@
 import MDAnalysis as mda
 import numpy as np
-from MDAnalysis.analysis.base import AnalysisFromFunction
 from MDAnalysis.lib.transformations import rotation_matrix
-import os
+from sys import stdout
 
 from src.controllers.controller import Controller
 
+from openmm.app import *
+from openmm import *
+import openmm.unit as unit
 
 class RotationController(Controller):
 
@@ -32,32 +34,63 @@ class RotationController(Controller):
         center_A = chainA.center_of_geometry()
         center_B = chainB.center_of_geometry()
 
-        # Rotation increment in degrees
-        step_deg = self.rotation_step
-        step_rad = np.deg2rad(step_deg)
-
         # Full nested loop: rotate B 360° per A 20° rotation
-        structure_id = 0
-        for i in range(0, 360, step_deg):
+        for i in range(0, 360, self.rotation_step):
+            # always reset to the original file before rotating further
+            u = mda.Universe(self.input_file)
+            chainA = u.select_atoms("segid A")
+            chainB = u.select_atoms("segid B")
+
+            step_rad = np.deg2rad(i)
             # Rotate Chain A
             self.__rotate_selection(chainA, step_rad, axis_A, center_A)
 
-            for j in range(0, 360, step_deg):
+            for j in range(0, 360, self.rotation_step):
                 # Rotate Chain B
+                step_rad = np.deg2rad(j)
                 self.__rotate_selection(chainB, step_rad, axis_B, center_B)
 
                 # Save structure
-                outname = f"{self.output_folder}/rot_{structure_id:03d}.pdb"
+                outname = os.path.join(self.output_folder, f"rot_{i}_{j}.pdb")
                 with mda.Writer(outname, u.atoms.n_atoms) as w:
                     w.write(u.atoms)
 
-                # Undo Chain B rotation
-                self.__rotate_selection(chainB, -step_rad, axis_B, center_B)
+                self.__minimise_structure(outname)
 
-                structure_id += 1
+                # Undo Chain B rotation
+                #self.__rotate_selection(chainB, -step_rad, axis_B, center_B)
 
             # Undo Chain A rotation before next A rotation
-            self.__rotate_selection(chainA, -step_rad, axis_A, center_A)
+            #self.__rotate_selection(chainA, -step_rad, axis_A, center_A)
+
+
+    def __minimise_structure(self, input_file: str):
+        pdb = PDBFile(input_file)
+        forcefield = ForceField('amber99sb.xml', 'tip3p.xml')
+        #modeller = Modeller(pdb.topology, pdb.positions)
+        #modeller.addHydrogens(forcefield)  # ← ADD correct hydrogens
+        #with open("../temp/dimer_h.pdb", "w") as file:
+        #    PDBFile.writeFile(modeller.topology, modeller.positions, file)
+        #pdb = PDBFile('../temp/dimer_h.pdb')
+        system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME, nonbondedCutoff=1 * unit.nanometer,
+                                         constraints=HBonds)
+        integrator = LangevinIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
+        simulation = Simulation(pdb.topology, system, integrator)
+        simulation.context.setPositions(pdb.positions)
+        simulation.minimizeEnergy()
+
+
+        #simulation.reporters.append(PDBReporter('output.pdb', 100))
+        #simulation.reporters.append(StateDataReporter(stdout, 100, step=True, potentialEnergy=True, temperature=True))
+        print(f"Resolving potential side chain clashes on {input_file}")
+        try:
+            simulation.step(500)
+        except:
+
+
+        minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+        with open(input_file, 'w') as f:
+            PDBFile.writeFile(simulation.topology, minimized_positions, f)
 
     def __get_principal_axis(self, sel):
         positions = sel.positions - sel.center_of_geometry()
