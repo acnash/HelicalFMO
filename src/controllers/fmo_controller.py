@@ -151,10 +151,11 @@ class FMOController(Controller):
         return icharge, system_charge
 
     def __build_fragnames(self, u: mda.Universe) -> str:
-        fragnames = "frgnam(1)="
-        for residue in u.residues:
-            fragnames = ",".join([fragnames, residue.resname])
-        fragnames = "".join([fragnames, "\n"])
+        fragnames_start = "frgnam(1)="
+
+        fragnames_list = u.residues.resnames.tolist()
+        fragnames = ",".join(fragnames_list)
+        fragnames = "".join([fragnames_start, fragnames, "\n"])
 
         return fragnames
 

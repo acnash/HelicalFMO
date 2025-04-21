@@ -21,9 +21,16 @@ class FMOObject:
         output_str = self.instruction
         output_str = "".join([output_str, " $FMO\n"])
         output_str = "".join([output_str, "  ", self.num_fragments])
-        output_str = "".join([output_str, self.fragment_names])
-        output_str = "".join([output_str, self.icharge])
-        output_str = "".join([output_str, self.mult])
+
+        split_fragment_names = self.__wrap_on_commas(self.fragment_names)
+        output_str = "".join([output_str, split_fragment_names, "\n"])
+
+        split_icharge = self.__wrap_on_commas(self.icharge)
+        output_str = "".join([output_str, split_icharge, "\n"])
+
+        split_mult = self.__wrap_on_commas(self.mult)
+        output_str = "".join([output_str, split_mult, "\n"])
+
         output_str = "".join([output_str, self.indat])
         output_str = "".join([output_str, " $END\n"])
         output_str = "".join([output_str, " $fmoprp nprint=9 naodir=220 modorb=1 ipieda=1 $end\n"])
@@ -43,3 +50,20 @@ class FMOObject:
         output_str = "".join([output_str, " $END\n"])
 
         return output_str
+
+    def __wrap_on_commas(self, s: str, max_length=79) -> str:
+        parts = s.split(",")
+        lines = []
+        current_line = ""
+
+        for i, part in enumerate(parts):
+            segment = part + ("," if i < len(parts) - 1 else "")
+            if len(current_line) + len(segment) <= max_length:
+                current_line += segment
+            else:
+                lines.append(current_line.strip())
+                current_line = segment
+        if current_line:
+            lines.append(current_line.strip())
+
+        return "\n".join(lines)
