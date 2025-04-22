@@ -1,4 +1,5 @@
-cap:
+fmo:
   file: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\contacts_0.pdb
-  #folder:
   output_folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp
+  basis: STO-3G
+  theory: HF
