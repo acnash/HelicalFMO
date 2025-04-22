@@ -1,0 +1,15 @@
+generate:
+  seq_a: KKKLALITFFIALVGLGAVGLAWTRKKK
+  output_file: C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\homodimer.pdb
+rotation:
+  file: C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\homodimer.pdb
+  output_folder: C:\Users\Anthony\PycharmProjects\HelicalFMO\structures\
+  rotation_angle: 20
+  both_helices: True
+contact_distance:
+  folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\structures\
+  output_folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\
+  distance_cutoff: 3
+cap:
+  folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\
+  output_folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp
