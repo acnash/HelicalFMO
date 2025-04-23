@@ -27,6 +27,8 @@ def main() -> None:
         yaml_dict = yaml.safe_load(file)
 
     for section in section_to_run:
+        logger.info(f"Checking operation {section}...")
+        print(f"Checking operation {section}...")
         if section in yaml_dict:
             config_section = yaml_dict[section]
 

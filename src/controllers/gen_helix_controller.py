@@ -20,6 +20,8 @@ class GenHelixController(Controller):
     def __init__(self):
         super().__init__()
         self.logger = get_logger(__name__)
+        self.logger.info(f"...constructing GenHelixController.")
+        print(f"...constructing GenHelixController.")
 
         self.sequence_A = None
         self.sequence_B = None
@@ -31,19 +33,29 @@ class GenHelixController(Controller):
         self.output_file = config_section.get("output_file")
 
         if not self.sequence_A and not self.sequence_B:
+            self.logger.error(f"...no seq_A or seq_B.")
+            print(f"Error:...no seq_A or seq_B.")
+            return False
+        if not self.sequence_A and self.sequence_B:
+            self.logger.error(f"...seq_b provided but seq_a missing.")
+            print(f"Error...seq_b provided but seq_a missing.")
             return False
         if not self.output_file:
+            self.logger.error(f"...missing output_file.")
+            print(f"Error:...missing output_file.")
             return False
 
+        if self.sequence_A and not self.sequence_B:
+            self.logger.info(f"...building a homodimer {self.sequence_A}")
+            print(f"...building a homodimer {self.sequence_A}")
+        else:
+            self.logger.info(f"...building a heterodimer:")
+            self.logger.info(f"...{self.sequence_A}")
+            self.logger.info(f"...{self.sequence_B}")
+            print(f"...building a heterodimer:")
+            print(f"...{self.sequence_A}")
+            print(f"...{self.sequence_B}")
         return True
-
-    #def validate_inputs(self):
-    #    if not self.sequence_A and not self.sequence_B:
-    #        return False
-    #    if not self.output_file:
-    #        return False
-
-    #    return True
 
     def run_controller(self):
         geo_A_list = []
@@ -81,15 +93,21 @@ class GenHelixController(Controller):
         # save each structure to a temp file
         outA = Bio.PDB.PDBIO()
         outA.set_structure(structure_A)
+        self.logger.info(f"...saving helix A to temporary file: ../temp/helixA.pdb")
         outA.save("../temp/helixA.pdb")
 
         outB = Bio.PDB.PDBIO()
         outB.set_structure(structure_B)
+        self.logger.info(f"...saving helix B to temporary file: ../temp/helixB.pdb")
         outB.save("../temp/helixB.pdb")
 
         # calculate the average radius of each helix; keep the longest
         max_A, radius_A = self.__calculate_average_helix_radius("../temp/helixA.pdb")
+        self.logger.info(f"...helix A: maximum radius: {max_A} and average radius {radius_A}")
+        print(f"...helix A: maximum radius: {max_A} and average radius {radius_A}")
         max_B, radius_B = self.__calculate_average_helix_radius("../temp/helixB.pdb")
+        self.logger.info(f"...helix B: maximum radius: {max_B} and average radius {radius_B}")
+        print(f"...helix B: maximum radius: {max_B} and average radius {radius_B}")
 
         # load both structures MDAnalysis.
         uniA = mda.Universe("../temp/helixA.pdb")
@@ -104,6 +122,8 @@ class GenHelixController(Controller):
         self.__align_principal_axis_to_z(selB)
 
         # Translate helixB
+        self.logger.info(f"...translating helix B by twice the maximum radius + 13.8 angstrom: {max(max_A*2, max_B*2)+13.8}")
+        print(f"...translating helix B by twice the maximum radius + 13.8 angstrom: {max(max_A*2, max_B*2)+13.8}")
         selB.translate([max(max_A*2, max_B*2)+13.8, 0.0, 0.0])
 
         # collect properties to rebuild the universe
@@ -139,8 +159,6 @@ class GenHelixController(Controller):
             residue_atom_counts_B.append(len(residue.atoms))
 
         # add chain Label A
-
-
         atom_resindex_A = np.concatenate([
             np.full(count, i, dtype=int) for i, count in enumerate(residue_atom_counts_A)
         ])
@@ -173,9 +191,15 @@ class GenHelixController(Controller):
         # combine and save to a file
         merged = mda.Merge(new_atoms_u_A.atoms, new_atoms_u_B.atoms)
         #merged.trajectory.unitcell = [100.0, 100.0, 100.0, 90.0, 90.0, 90.0]
+        self.logger.info(f"...saving merged helix A and helix B to ../temp/initial_dimer.pdb")
+        print(f"...saving merged helix A and helix B to ../temp/initial_dimer.pdb")
         pdb_writer.write_fragments_pdb("../temp/initial_dimer.pdb", merged)
 
         # add the cryst1_line to the top of the file
+        self.logger.info(f"...adding crystal unit cell dimensions:")
+        self.logger.info(f"...CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1")
+        print(f"...adding crystal unit cell dimensions:")
+        print(f"...CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1")
         cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
         with open("../temp/initial_dimer.pdb", "r") as pdb_file:
             pdb_content = pdb_file.readlines()
@@ -186,6 +210,8 @@ class GenHelixController(Controller):
                 pdb_content[i] = cryst1_line
                 break
 
+        self.logger.info(f"...saving dimer with unit cell info to ../temp/initial_dimer.pdb")
+        print(f"...saving dimer with unit cell info to ../temp/initial_dimer.pdb")
         with open("../temp/initial_dimer.pdb", "w") as modified_file:
             modified_file.writelines(pdb_content)
 
