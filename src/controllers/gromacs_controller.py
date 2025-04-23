@@ -1,12 +1,19 @@
+from typing import Dict, Union
+
 from src.controllers.controller import Controller
 
 
 class GromacsController(Controller):
 
-    def __init__(self, index_file, topology_file, output_label):
-        self.index_file = index_file
-        self.topology_file = topology_file
-        self.output_label = output_label
+    def __init__(self): #, index_file, topology_file, output_label):
+        self.index_file = None
+        self.topology_file = None
+        self.output_label = None
+
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.index_file = config_section.get("index_file")
+        self.topology_file = config_section.get("topology_file")
+        self.output_label = config_section.get("output_label")
 
     def build_tpr(self, mdp_file, structure_file, sim_type):
         if sim_type == "energy_min":

@@ -1,5 +1,5 @@
-#
 import os.path
+from typing import Dict, Union
 
 from MDAnalysis.analysis import distances
 import numpy as np
@@ -10,25 +10,35 @@ from src.logger_config import get_logger
 
 
 class ContactController(Controller):
-    def __init__(self, file_location, folder_location, output_folder, distance_cutoff):
+    def __init__(self):
         super().__init__()
-
         self.logger = get_logger(__name__)
 
-        self.file_location = file_location
-        self.folder_location = folder_location
-        self.distance_cutoff = distance_cutoff
-        self.output_folder = output_folder
+        self.file_location = None
+        self.folder_location = None
+        self.distance_cutoff = None
+        self.output_folder = None
+        self.ignore_num_start_res = None
+        self.ignore_num_end_res = None
+        self.renum_chains_list = None
 
         self.universe_list = []
 
-    def validate_inputs(self, ignore_num_start_res, ignore_num_end_res, renum_chains_list):
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.file_location = config_section.get("file")
+        self.folder_location = config_section.get("folder")
+        self.distance_cutoff = config_section.get("distance_cutoff")
+        self.output_folder = config_section.get("output_folder")
+        self.ignore_num_start_res = config_section.get("ignore_num_start_res")
+        self.ignore_num_end_res = config_section.get("ignore_num_end_res")
+        self.renum_chains_list = config_section.get("renum_chains")
+
         if self.file_location:
             universe = pdb_reader.read_pdb_file(self.file_location)
             if pdb_cleaner.check_chains_in_pdb(universe):
-                universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
-                if renum_chains_list:
-                    universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
+                universe = pdb_cleaner.collect_two_chains(universe, self.ignore_num_start_res, self.ignore_num_end_res)
+                if self.renum_chains_list:
+                    universe = pdb_cleaner.renumber_chain_resids(universe, self.renum_chains_list)
                 self.universe_list.append(universe)
                 print("Read and processed two chains from one model")
                 self.logger.info("Read and processed two chains from one model")
@@ -39,9 +49,9 @@ class ContactController(Controller):
             universe_list = pdb_reader.read_pdb_folder(self.folder_location)
             for universe in universe_list:
                 if pdb_cleaner.check_chains_in_pdb(universe):
-                    universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
-                    if renum_chains_list:
-                        universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
+                    universe = pdb_cleaner.collect_two_chains(universe, self.ignore_num_start_res, self.ignore_num_end_res)
+                    if self.renum_chains_list:
+                        universe = pdb_cleaner.renumber_chain_resids(universe, self.renum_chains_list)
                     self.universe_list.append(universe)
                     print("Read and processed two chains from one model")
                     self.logger.info("Read and processed two chains from one model")
@@ -49,6 +59,35 @@ class ContactController(Controller):
                     return False
 
         return True
+
+
+    # def validate_inputs(self, ignore_num_start_res, ignore_num_end_res, renum_chains_list):
+    #     if self.file_location:
+    #         universe = pdb_reader.read_pdb_file(self.file_location)
+    #         if pdb_cleaner.check_chains_in_pdb(universe):
+    #             universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
+    #             if renum_chains_list:
+    #                 universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
+    #             self.universe_list.append(universe)
+    #             print("Read and processed two chains from one model")
+    #             self.logger.info("Read and processed two chains from one model")
+    #         else:
+    #             return False
+    #
+    #     else:
+    #         universe_list = pdb_reader.read_pdb_folder(self.folder_location)
+    #         for universe in universe_list:
+    #             if pdb_cleaner.check_chains_in_pdb(universe):
+    #                 universe = pdb_cleaner.collect_two_chains(universe, ignore_num_start_res, ignore_num_end_res)
+    #                 if renum_chains_list:
+    #                     universe = pdb_cleaner.renumber_chain_resids(universe, renum_chains_list)
+    #                 self.universe_list.append(universe)
+    #                 print("Read and processed two chains from one model")
+    #                 self.logger.info("Read and processed two chains from one model")
+    #             else:
+    #                 return False
+    #
+    #     return True
 
     def run_controller(self):
         count = 0

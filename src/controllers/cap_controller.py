@@ -1,25 +1,41 @@
+from typing import Dict, Union
+
 import MDAnalysis as mda
 import numpy as np
 
 from src.controllers.controller import Controller
-from src.models import pdb_reader, pdb_writer, pdb_cleaner
+from src.models import pdb_reader, pdb_writer
+from src.logger_config import get_logger
 
 
 class CapController(Controller):
 
-    def __init__(self, input_file, input_directory):
+    def __init__(self):
         super().__init__()
-        self.input_file = input_file
-        self.input_directory = input_directory
+        logger = get_logger(__name__)
+
+        self.input_file = None
+        self.input_directory = None
 
         self.universe_list = []
 
-    def validate_inputs(self):
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.input_file = config_section.get("file")
+        self.input_directory = config_section.get("folder")
+
         if self.input_file:
             universe = pdb_reader.read_pdb_file(self.input_file)
             self.universe_list.append(universe)
         else:
             self.universe_list = pdb_reader.read_pdb_folder(self.input_directory)
+
+
+    #def validate_inputs(self):
+    #    if self.input_file:
+    #        universe = pdb_reader.read_pdb_file(self.input_file)
+    #        self.universe_list.append(universe)
+    #    else:
+    #        self.universe_list = pdb_reader.read_pdb_folder(self.input_directory)
 
     def run_controller(self):
         for universe in self.universe_list:
@@ -140,7 +156,7 @@ class CapController(Controller):
                 total_charge = self.__calculate_charge(merged)
 
                 # make a reduced file for PSI4
-                self.reduce_structure(merged, "just_backbone.pdb")  # via MDAnalysis
+                self.__reduce_structure(merged, "just_backbone.pdb")  # via MDAnalysis
                 just_backbone_universe = mda.Universe("just_backbone.pdb")  # via plain text editing
 
                 pdb_writer.write_pdb_to_psi4in(just_backbone_universe, "output_temp.psi4in", 0)
@@ -203,7 +219,7 @@ class CapController(Controller):
 
         return total_charge
 
-    def reduce_structure(self, u: mda.Universe, output_file: str) -> None:
+    def __reduce_structure(self, u: mda.Universe, output_file: str) -> None:
 
         writer = mda.Writer(output_file, multiframe=False)
         # Loop through each residue

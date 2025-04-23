@@ -1,0 +1,9 @@
+contact_distance:
+  file: C:\Users\Anthony\PyCharmProjects\HelicalFMO\structures\4auo_single_chains_AG.pdb
+  # folder:
+  output_folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\
+  distance_cutoff: 3
+  renum_chains: B:1
+  #ignore_num_start_res:
+  #ignore_num_end_res:
+

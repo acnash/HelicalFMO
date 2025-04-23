@@ -1,0 +1,4 @@
+generate:
+  seq_a: KKKLALITFFIALVGLGAVGLAWTRKKK
+  #seq_b: Including seq_a AND seq_b generates a heterodimer.
+  output_file: C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\homodimer.pdb

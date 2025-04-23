@@ -1,0 +1,5 @@
+fmo:
+  file: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp\contacts_0.pdb
+  output_folder: C:\Users\Anthony\PyCharmProjects\HelicalFMO\temp
+  basis: STO-3G
+  theory: HF
