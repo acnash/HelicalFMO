@@ -1,5 +1,6 @@
 # HelicalFMO
 
+
 ## UNDER ACTIVE DEVELOPMENT (22.04.2025)
 
 __To do__
@@ -11,7 +12,6 @@ __To do__
 6. Implement a cross-angle and Left/Right handedness.
 7. Implement a slab model to approximate an implicit lipid bilayer.
 8. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
-
 ---
 
 Fragment Molecular Orbital analysis for inter-helical transmembrane dimer residue interactions. 
