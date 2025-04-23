@@ -1,15 +1,16 @@
 # HelicalFMO
 
-## UNDER ACTIVE DEVELOPMENT (11.04.2025)
+## UNDER ACTIVE DEVELOPMENT (22.04.2025)
 
 __To do__
 1. Move command line inputs into a YAML format.
-2. Add the rotation code.
-3. Go through and implement fault tolerance.
-4. Go through and implement Logger.
-5. Implement a cross-angle and Left/Right handedness.
-6. Implement a slab model to approximate an implicit lipid bilayer.
-7. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
+2. Check whether PSI4 coordinates are retrieved (I don't think they are).
+3. Add the rotation code.
+4. Go through and implement fault tolerance.
+5. Go through and implement Logger.
+6. Implement a cross-angle and Left/Right handedness.
+7. Implement a slab model to approximate an implicit lipid bilayer.
+8. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
 
 ---
 
@@ -34,7 +35,7 @@ I've tried to keep the number of dependencies to a minimum.
 - Clone HelicalFMO main. 
 - Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
 - Install PSI4 `conda create -n psi4_env psi4 -c conda-forge`
-- Install <a href="https://pypi.org/project/biopython/">Biopython.</a> 
+- Install <a href="https://pypi.org/project/biopython/">Biopython</a> with ```pip install biopython```
 - Install <a href="https://github.com/clauswilke/PeptideBuilder">PeptideBuilder</a> with `pip install PeptideBuilder`
 - Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`
 - Install RDKit for Python
@@ -221,6 +222,7 @@ The GAMESS input file is stored in ```output_folder```.
 
 ### Command line parameters
 - ```file``` The path a PDB input file.
+- ```folder``` The folder path to multiple PDB input files.
 - ```output_folder``` The folder path to the generated GAMESS FMO input file. 
 - ```basis``` The basis set added to the GAMESS input file. Options are ```STO-3G``` (default) and ```"6-31G*"```. They represent low and reasonable accuracy, respectively.  
 - ```theory``` The level of quantum theory added to the GAMESS input file. Options are ```HF``` (default) and ```MP2```.

@@ -1,8 +1,6 @@
-# Main entry into HelicalFMO
 import argparse
 import os
 import yaml
-from typing import List
 
 from logger_config import get_logger
 from controllers.contact_controller import ContactController
@@ -43,12 +41,15 @@ def main() -> None:
             elif section == "fmo":
                 controller = FMOController()
             else:
-                print("....")
+                logger.warning(f"Warning: Operation {section} is not recognised.")
+                print(f"Warning: Operation {section} is not recognised.")
                 continue
 
-            controller.validate_inputs(config_section)
-            controller.run_controller()
+            logger.info(f"Operation {section} is running.")
+            print(f"Operation {section} is running.")
 
+            controller.validate_controller(config_section)
+            controller.run_controller()
 
 
 if __name__ == '__main__':

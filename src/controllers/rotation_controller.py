@@ -1,27 +1,33 @@
 import MDAnalysis as mda
 import numpy as np
+from typing import Dict, Union
 from MDAnalysis.lib.transformations import rotation_matrix
 from sys import stdout
 
-from numpy.linalg import norm
-
 from src.controllers.controller import Controller
+from src.logger_config import get_logger
 
 from openmm.app import *
 from openmm import *
 import openmm.unit as unit
 
+
 class RotationController(Controller):
 
-    def __init__(self, input_file: str, output_folder: str, rotation_step: int):
+    def __init__(self):
         super().__init__()
+        logger = get_logger(__name__)
 
-        self.input_file = input_file
-        self.output_folder = output_folder
-        self.rotation_step = rotation_step
+        self.input_file = None
+        self.output_folder = None
+        self.rotation_step = None
+        self.both_helices = None
 
-    def validate_inputs(self):
-        pass
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.input_file = config_section.get("file")
+        self.output_folder = config_section.get("output_folder")
+        self.rotation_step = config_section.get("rotation_angle")
+        self.both_helices = config_section.get("both_helices")
 
     def run_controller(self):
         u = mda.Universe(self.input_file)
@@ -58,7 +64,6 @@ class RotationController(Controller):
                     w.write(u.atoms)
 
                 self.__minimise_structure(outname)
-
 
 
     def __minimise_structure(self, input_file: str):

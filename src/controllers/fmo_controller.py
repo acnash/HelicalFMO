@@ -1,5 +1,6 @@
 import os
 from typing import List, Any, Tuple
+from typing import Dict, Union
 
 import MDAnalysis as mda
 
@@ -10,39 +11,35 @@ from src.models.fmo_object import FMOObject
 
 class FMOController(Controller):
 
-    def __init__(self, basis: str, theory: str):
+    def __init__(self):
         super().__init__()
-
         self.logger = get_logger(__name__)
-        self.output_location = ""
+
+        self.output_location = None
         self.pdb_files = []
         self.universe_list = []
 
-        self.basis = basis
-        self.theory = theory
-
+        self.basis = None
+        self.theory = None
+        self.pdb_file = None
+        self.pdb_folder = None
         self.fmo_objects = []
 
-        #self.instruction_list = []
-        #self.fragment_name_list = []
-        #self.system_charge_list = []
-        #self.indat_list = []
-        #self.icharge_list = []
-        #self.num_fragments_list = []
-        #self.mult_list = []
-        #self.frag_boundary_list = []
-        #self.fmoxyz_list = []
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.basis = config_section.get("basis")
+        self.theory = config_section.get("theory")
+        self.output_location = config_section.get("output_folder")
 
-    def validate_inputs(self, pdb_file, pdb_folder, output_location):
-        if pdb_file:
-            self.pdb_files.append(pdb_file)
-            self.universe_list.append(mda.Universe(pdb_file))
+        self.pdb_file = config_section.get("file")
+        self.pdb_folder = config_section.get("folder")
+
+        if self.pdb_file:
+            self.pdb_files.append(self.pdb_file)
+            self.universe_list.append(mda.Universe(self.pdb_file))
         else:
-            self.pdb_files = [os.path.join(pdb_folder, f) for f in os.listdir(pdb_folder) if f.endswith(".pdb")]
+            self.pdb_files = [os.path.join(self.pdb_folder, f) for f in os.listdir(self.pdb_folder) if f.endswith(".pdb")]
             for file in self.pdb_files:
                 self.universe_list.append(mda.Universe(file))
-
-        self.output_location = output_location
 
     def run_controller(self):
         # operate at scale over all universe objects

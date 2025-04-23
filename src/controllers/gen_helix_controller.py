@@ -1,35 +1,49 @@
-import MDAnalysis
 from sys import stdout
-from src.controllers.controller import Controller
+from typing import Dict, Union
+
 from PeptideBuilder import Geometry
 import PeptideBuilder
 import Bio.PDB
 import MDAnalysis as mda
 import numpy as np
-from MDAnalysis.lib.transformations import rotation_matrix
 from openmm.app import *
 from openmm import *
 import openmm.unit as unit
 
+from src.logger_config import get_logger
+from src.controllers.controller import Controller
 from src.models import pdb_writer
 
 
 class GenHelixController(Controller):
 
-    def __init__(self, sequence_A, sequence_B, output_file):
+    def __init__(self):
         super().__init__()
+        self.logger = get_logger(__name__)
 
-        self.sequence_A = sequence_A
-        self.sequence_B = sequence_B
-        self.output_file = output_file
+        self.sequence_A = None
+        self.sequence_B = None
+        self.output_file = None
 
-    def validate_inputs(self):
+    def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
+        self.sequence_A = config_section.get("seq_a")
+        self.sequence_B = config_section.get("seq_b")
+        self.output_file = config_section.get("output_file")
+
         if not self.sequence_A and not self.sequence_B:
             return False
         if not self.output_file:
             return False
 
         return True
+
+    #def validate_inputs(self):
+    #    if not self.sequence_A and not self.sequence_B:
+    #        return False
+    #    if not self.output_file:
+    #        return False
+
+    #    return True
 
     def run_controller(self):
         geo_A_list = []
