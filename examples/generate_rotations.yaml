@@ -3,3 +3,5 @@ rotation:
   output_folder: C:\Users\Anthony\PycharmProjects\HelicalFMO\temp\
   rotation_angle: 20
   both_helices: True
+  crossing_angle: 20
+  angle_points: 3

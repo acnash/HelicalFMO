@@ -167,7 +167,6 @@ class GenHelixController(Controller):
 
         # combine and save to a file
         merged = mda.Merge(new_atoms_u_A.atoms, new_atoms_u_B.atoms)
-        #merged.trajectory.unitcell = [100.0, 100.0, 100.0, 90.0, 90.0, 90.0]
         pdb_writer.write_fragments_pdb("../temp/initial_dimer.pdb", merged)
 
         # add the cryst1_line to the top of the file

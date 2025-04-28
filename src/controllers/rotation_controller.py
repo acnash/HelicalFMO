@@ -1,16 +1,13 @@
-import os
-
 import MDAnalysis as mda
 import numpy as np
 from typing import Dict, Union
 from MDAnalysis.lib.transformations import rotation_matrix
 
 from src.controllers.controller import Controller
+from src.controllers.crossing_angle_controller import CrossingAngleController
 from src.logger_config import get_logger
 
-from openmm.app import *
 from openmm import *
-import openmm.unit as unit
 
 from src.models import pdb_writer
 
@@ -25,21 +22,29 @@ class RotationController(Controller):
         self.output_folder = None
         self.rotation_step = None
         self.both_helices = None
+        self.cross_angle = None
+        self.perform_crossing_angle = False
+        self.crossing_angle_controller = None
 
     def validate_controller(self, config_section: Dict[str, Union[str, int, float, bool]]):
         self.input_file = config_section.get("file")
         self.output_folder = config_section.get("output_folder")
         self.rotation_step = config_section.get("rotation_angle")
         self.both_helices = config_section.get("both_helices")
+        self.perform_crossing_angle = config_section.get("crossing_angle") is not None
 
         if not os.path.exists(self.input_file):
             print(f"Error: input_file {self.input_file} does not exist.")
             self.logger.error(f"Error: input_file {self.input_file} does not exist.")
             return False
-        else:
-            return True
 
+        if self.perform_crossing_angle:
+            self.crossing_angle_controller = CrossingAngleController()
+            is_valid = self.crossing_angle_controller.validate_controller(config_section)
+            if not is_valid:
+                return False
 
+        return True
 
     def run_controller(self):
         u = mda.Universe(self.input_file)
@@ -90,6 +95,13 @@ class RotationController(Controller):
         print(f"Finished building rotated helices.")
         self.logger.info(f"Finished building rotated helices.")
 
+        #now I adjust for crossing angle
+        if self.perform_crossing_angle:
+            print(f"Making adjustments to the crossing angle.")
+            self.logger.info(f"Making adjustments to the crossing angle.")
+            self.crossing_angle_controller.run_controller()
+
+
     def __adjust_interhelical_distance(self, input_file):
         u = mda.Universe(input_file)
 
@@ -114,36 +126,6 @@ class RotationController(Controller):
 
         with open(input_file, "w") as modified_file:
             modified_file.writelines(pdb_content)
-
-
-    # def __minimise_structure(self, input_file: str):
-    #     pdb = PDBFile(input_file)
-    #     forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
-    #     system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
-    #                                      nonbondedCutoff=1 * unit.nanometer, constraints=HBonds)
-    #     integrator = LangevinMiddleIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
-    #     simulation = Simulation(pdb.topology, system, integrator)
-    #     simulation.context.setPositions(pdb.positions)
-    #     simulation.minimizeEnergy(tolerance=1*unit.kilojoule/unit.mole/unit.nanometer, maxIterations=5000)
-    #     minimized_positions = simulation.context.getState(getPositions=True).getPositions()
-    #     with open("minimised.pdb", 'w') as f:
-    #         PDBFile.writeFile(simulation.topology, minimized_positions, f)
-    #
-    #     simulation.context.setVelocitiesToTemperature(600 * unit.kelvin)
-    #     simulation.reporters.append(StateDataReporter(stdout, 5, step=True, potentialEnergy=True, temperature=True))
-    #     print(f"Resolving potential side chain clashes on {input_file}")
-    #     try:
-    #         simulation.step(50)
-    #     except:
-    #         pass
-    #         #forces = simulation.context.getState(getForces=True).getForces()
-    #         #for a, f in zip(simulation.topology.atoms(), forces):
-    #         #    if norm(f) > 10000 * unit.kilojoules_per_mole / unit.nanometer:
-    #         #        print(a, f)
-    #
-    #     minimized_positions = simulation.context.getState(getPositions=True).getPositions()
-    #     with open(input_file, 'w') as f:
-    #         PDBFile.writeFile(simulation.topology, minimized_positions, f)
 
     def __get_principal_axis(self, sel):
         positions = sel.positions - sel.center_of_geometry()

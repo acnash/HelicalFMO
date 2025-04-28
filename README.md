@@ -4,14 +4,13 @@
 ## UNDER ACTIVE DEVELOPMENT (22.04.2025)
 
 __To do__
-1. Move command line inputs into a YAML format.
-2. Check whether PSI4 coordinates are retrieved (I don't think they are).
-3. Add the rotation code.
-4. Go through and implement fault tolerance.
-5. Go through and implement Logger.
-6. Implement a cross-angle and Left/Right handedness.
-7. Implement a slab model to approximate an implicit lipid bilayer.
-8. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
+1. Check whether PSI4 coordinates are retrieved (I don't think they are).
+2. Go through and implement fault tolerance.
+3. Go through and implement Logger.
+4. Implement a cross-angle and Left/Right handedness. From _n_ points along the backbone, adjust the crossing angle by optimising the energy (use an average). 
+5. Implement ANI-X2 force field to measure potential energy (of the full TM peptide-peptide).
+6. Add minimisation parameters.
+7. Clean the code, add function/method documentation. 
 ---
 
 Fragment Molecular Orbital analysis for inter-helical transmembrane dimer residue interactions. 
@@ -35,7 +34,7 @@ I've tried to keep the number of dependencies to a minimum.
 - Clone HelicalFMO main. 
 - Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
 - Install PSI4 `conda create -n psi4_env psi4 -c conda-forge`
-- Install yaml and PyYaml with pip.
+- Install yaml ```pip install yaml``` and PyYaml ```pip install PyYaml```.
 - Install <a href="https://pypi.org/project/biopython/">Biopython</a> with ```pip install biopython```
 - Install <a href="https://github.com/clauswilke/PeptideBuilder">PeptideBuilder</a> with `pip install PeptideBuilder`
 - Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`
