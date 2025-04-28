@@ -32,8 +32,12 @@ class GenHelixController(Controller):
         self.output_file = config_section.get("output_file")
 
         if not self.sequence_A and not self.sequence_B:
+            print(f"Error: Neither sequence A or B was supplied.")
+            self.logger.error(f"Error: Neither sequence A or B was supplied.")
             return False
         if not self.output_file:
+            print(f"Error: output_file was not defined.")
+            self.logger.error(f"output_file was not defined")
             return False
 
         return True

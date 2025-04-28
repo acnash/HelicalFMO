@@ -1,8 +1,9 @@
+import os
+
 import MDAnalysis as mda
 import numpy as np
 from typing import Dict, Union
 from MDAnalysis.lib.transformations import rotation_matrix
-from sys import stdout
 
 from src.controllers.controller import Controller
 from src.logger_config import get_logger
@@ -11,12 +12,14 @@ from openmm.app import *
 from openmm import *
 import openmm.unit as unit
 
+from src.models import pdb_writer
+
 
 class RotationController(Controller):
 
     def __init__(self):
         super().__init__()
-        logger = get_logger(__name__)
+        self.logger = get_logger(__name__)
 
         self.input_file = None
         self.output_folder = None
@@ -28,6 +31,15 @@ class RotationController(Controller):
         self.output_folder = config_section.get("output_folder")
         self.rotation_step = config_section.get("rotation_angle")
         self.both_helices = config_section.get("both_helices")
+
+        if not os.path.exists(self.input_file):
+            print(f"Error: input_file {self.input_file} does not exist.")
+            self.logger.error(f"Error: input_file {self.input_file} does not exist.")
+            return False
+        else:
+            return True
+
+
 
     def run_controller(self):
         u = mda.Universe(self.input_file)
@@ -63,7 +75,45 @@ class RotationController(Controller):
                 with mda.Writer(outname, u.atoms.n_atoms) as w:
                     w.write(u.atoms)
 
-                self._minimise_structure(outname, outname)
+                resolved = False
+                while not resolved:
+                    try:
+                        print(f"Attempting to energy minimise {outname}.")
+                        self.logger.info(f"Attempting to energy minimise {outname}.")
+                        self._minimise_structure(outname, outname)
+                        resolved = True
+                    except:
+                        print(f"Warning: Energy minimisation of {outname} failed. Adjusting the position of helix B by 0.1 A.")
+                        self.logger.warning(f"Energy minimisation of {outname} failed. Adjusting the position of helix B by 0.1 A.")
+                        self.__adjust_interhelical_distance(outname)
+
+        print(f"Finished building rotated helices.")
+        self.logger.info(f"Finished building rotated helices.")
+
+    def __adjust_interhelical_distance(self, input_file):
+        u = mda.Universe(input_file)
+
+        selA = u.select_atoms("segid A")
+        selB = u.select_atoms("segid B")
+        selB.translate([0.1, 0.0, 0.0])
+
+        merged = mda.Merge(selA.atoms, selB.atoms)
+
+        pdb_writer.write_fragments_pdb(input_file, merged)
+
+        # reconstruct the unit cell information
+        cryst1_line = "CRYST1  100.000  100.000  100.000  90.00  90.00  90.00 P 1           1\n"
+        with open(input_file, "r") as pdb_file:
+            pdb_content = pdb_file.readlines()
+
+        # Find the CRYST1 line and replace it
+        for i, line in enumerate(pdb_content):
+            if line.startswith("CRYST1"):
+                pdb_content[i] = cryst1_line
+                break
+
+        with open(input_file, "w") as modified_file:
+            modified_file.writelines(pdb_content)
 
 
     # def __minimise_structure(self, input_file: str):

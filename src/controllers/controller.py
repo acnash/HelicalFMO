@@ -120,7 +120,7 @@ class Controller(ABC):
         minimized_positions = simulation.context.getState(getPositions=True).getPositions()
         simulation.reporters.append(PDBReporter('output.pdb', 1000))
         simulation.reporters.append(StateDataReporter(stdout, 1000, step=True, potentialEnergy=True, temperature=True))
-        simulation.step(50000)
+        simulation.step(10000)
         with open(output_file, 'w') as f:
             PDBFile.writeFile(simulation.topology, minimized_positions, f)
 
