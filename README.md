@@ -35,6 +35,7 @@ I've tried to keep the number of dependencies to a minimum.
 - Clone HelicalFMO main. 
 - Install MDAnalysis inside a base environment or an environment of your choosing. Obviously HelicalFMO needs access. 
 - Install PSI4 `conda create -n psi4_env psi4 -c conda-forge`
+- Install yaml and PyYaml with pip.
 - Install <a href="https://pypi.org/project/biopython/">Biopython</a> with ```pip install biopython```
 - Install <a href="https://github.com/clauswilke/PeptideBuilder">PeptideBuilder</a> with `pip install PeptideBuilder`
 - Install <a href="https://github.com/leeping/geomeTRIC">geomeTRIC</a> by changing to the psi4 environment `conda activate psi4_env` then `conda install -c conda-forge geometric`

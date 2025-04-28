@@ -17,14 +17,23 @@ def main() -> None:
     temp_folder = "../temp"
     if not os.path.exists(temp_folder):
         os.makedirs(temp_folder)
+        print(f"Making ../temp to store temporary files.")
+        logger.info(f"Making ../temp to store temporary files.")
+    else:
+        print(f"../temp folder exists.")
+        logger.info(f"../temp folder exists.")
 
     parser = argparse.ArgumentParser(description="Process TM domain PDB files or folder of files.")
-    parser.add_argument("--input", type=str, required=True, help="YAML input file.")
+    parser.add_argument("--input", type=str, required=True,
+                        help=f"YAML input file. See the YAML files in ../examples folder for more information (and "
+                             f"the GitHub README).")
     args = parser.parse_args()
     input_file = args.input
 
     with open(input_file, "r") as file:
         yaml_dict = yaml.safe_load(file)
+        print(f"Opening YAML input file {input_file}.")
+        logger.info(f"Opening YAML input file {input_file}.")
 
     for section in section_to_run:
         if section in yaml_dict:
@@ -48,8 +57,15 @@ def main() -> None:
             logger.info(f"Operation {section} is running.")
             print(f"Operation {section} is running.")
 
-            controller.validate_controller(config_section)
-            controller.run_controller()
+            valid = controller.validate_controller(config_section)
+            if valid:
+                print(f"Operation {section} is valid. Running controller...")
+                logger.info(f"Operation {section} is valid. Running controller...")
+                controller.run_controller()
+            else:
+                print(f"Error: Operation {section} is invalid. Aborting all operations.")
+                logger.error(f"Operation {section} is invalid. Aborting all operations.")
+                exit()
 
 
 if __name__ == '__main__':

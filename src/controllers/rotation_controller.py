@@ -63,37 +63,37 @@ class RotationController(Controller):
                 with mda.Writer(outname, u.atoms.n_atoms) as w:
                     w.write(u.atoms)
 
-                self.__minimise_structure(outname)
+                self._minimise_structure(outname, outname)
 
 
-    def __minimise_structure(self, input_file: str):
-        pdb = PDBFile(input_file)
-        forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
-        system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
-                                         nonbondedCutoff=1 * unit.nanometer, constraints=HBonds)
-        integrator = LangevinMiddleIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
-        simulation = Simulation(pdb.topology, system, integrator)
-        simulation.context.setPositions(pdb.positions)
-        simulation.minimizeEnergy(tolerance=1*unit.kilojoule/unit.mole/unit.nanometer, maxIterations=5000)
-        minimized_positions = simulation.context.getState(getPositions=True).getPositions()
-        with open("minimised.pdb", 'w') as f:
-            PDBFile.writeFile(simulation.topology, minimized_positions, f)
-
-        simulation.context.setVelocitiesToTemperature(600 * unit.kelvin)
-        simulation.reporters.append(StateDataReporter(stdout, 5, step=True, potentialEnergy=True, temperature=True))
-        print(f"Resolving potential side chain clashes on {input_file}")
-        try:
-            simulation.step(50)
-        except:
-            pass
-            #forces = simulation.context.getState(getForces=True).getForces()
-            #for a, f in zip(simulation.topology.atoms(), forces):
-            #    if norm(f) > 10000 * unit.kilojoules_per_mole / unit.nanometer:
-            #        print(a, f)
-
-        minimized_positions = simulation.context.getState(getPositions=True).getPositions()
-        with open(input_file, 'w') as f:
-            PDBFile.writeFile(simulation.topology, minimized_positions, f)
+    # def __minimise_structure(self, input_file: str):
+    #     pdb = PDBFile(input_file)
+    #     forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
+    #     system = forcefield.createSystem(pdb.topology, nonbondedMethod=PME,
+    #                                      nonbondedCutoff=1 * unit.nanometer, constraints=HBonds)
+    #     integrator = LangevinMiddleIntegrator(300 * unit.kelvin, 1 / unit.picosecond, 0.001 * unit.picoseconds)
+    #     simulation = Simulation(pdb.topology, system, integrator)
+    #     simulation.context.setPositions(pdb.positions)
+    #     simulation.minimizeEnergy(tolerance=1*unit.kilojoule/unit.mole/unit.nanometer, maxIterations=5000)
+    #     minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+    #     with open("minimised.pdb", 'w') as f:
+    #         PDBFile.writeFile(simulation.topology, minimized_positions, f)
+    #
+    #     simulation.context.setVelocitiesToTemperature(600 * unit.kelvin)
+    #     simulation.reporters.append(StateDataReporter(stdout, 5, step=True, potentialEnergy=True, temperature=True))
+    #     print(f"Resolving potential side chain clashes on {input_file}")
+    #     try:
+    #         simulation.step(50)
+    #     except:
+    #         pass
+    #         #forces = simulation.context.getState(getForces=True).getForces()
+    #         #for a, f in zip(simulation.topology.atoms(), forces):
+    #         #    if norm(f) > 10000 * unit.kilojoules_per_mole / unit.nanometer:
+    #         #        print(a, f)
+    #
+    #     minimized_positions = simulation.context.getState(getPositions=True).getPositions()
+    #     with open(input_file, 'w') as f:
+    #         PDBFile.writeFile(simulation.topology, minimized_positions, f)
 
     def __get_principal_axis(self, sel):
         positions = sel.positions - sel.center_of_geometry()
